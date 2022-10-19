@@ -63,7 +63,7 @@ public class AccountManager {
      * @throws IOException
      */
     public void addAccount(String userName, String userPassword) throws IOException {
-        if (accountList.size() == MAXIMUM_ACCOUNTS) {
+        if (accountList.size() == 1) {
             client.firstLoginMessage = "Account list full!";
             client.secondLoginMessage = "Delete an account to create space for a new one.";
             return;
@@ -74,13 +74,13 @@ public class AccountManager {
             return;
         }
         Account accountToAdd = new Account(userName, userPassword);
-        for (Account account : accountList) {
-            if (accountToAdd.getUserName().equals(account.getUserName())) {
-                client.firstLoginMessage = "There is already an account";
-                client.secondLoginMessage = "saved with that username.";
-                return;
-            }
-        }
+//        for (Account account : accountList) {
+//            if (accountToAdd.getUserName().equals(account.getUserName())) {
+//                client.firstLoginMessage = "There is already an account";
+//                client.secondLoginMessage = "saved with that username.";
+//                return;
+//            }
+//        }
         accountList.add(accountToAdd);
         saveAccounts();
     }

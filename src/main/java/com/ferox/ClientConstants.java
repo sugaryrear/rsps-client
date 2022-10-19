@@ -111,8 +111,8 @@ public final class ClientConstants {
     public static final boolean OBJECT_DEFINITION_LOW_MEMORY = false;
 
     //We could always add the version here for the production cache folder if we wanted to.
-    public static final String CACHE_DIRECTORY = production ? System.getProperty("user.home") + File.separator + ".Ferox/" : "./.Ferox/";
-    public static final String DATA_DIRECTORY = production ? System.getProperty("user.home") + File.separator + ".ferox-data/" : "./.ferox-data/";
+    public static final String CACHE_DIRECTORY = production ? System.getProperty("user.home") + File.separator + ".rsps/" : "./.rsps/";
+    public static final String DATA_DIRECTORY = production ? System.getProperty("user.home") + File.separator + ".rsps-data/" : "./.rsps-data/";
 
     public static boolean JAGCACHED_ENABLED = false;
 

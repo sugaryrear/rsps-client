@@ -382,7 +382,7 @@ public final class ObjectDefinition {
             } else if(opcode == 81) {
                 buffer.readUnsignedByte();
             } else if (opcode == 82) {
-                int minimapFunction = buffer.readUShort();//AreaType
+                minimapFunction = buffer.readUShort();//AreaType
             } else if(opcode == 89) {
                 boolean randomAnimStart = false;
             } else if (opcode == 249) {
@@ -519,6 +519,7 @@ public final class ObjectDefinition {
         contrast = 0;
         scene_actions = null;
         minimap_function_id = -1;
+        minimapFunction = -1;
         map_scene_id = -1;
         rotated = false;
         cast_shadow = true;
@@ -789,7 +790,7 @@ public final class ObjectDefinition {
 
     public int contrast;
     public byte ambient;
-
+    public int minimapFunction;
     public boolean rotated;
     public boolean walkable;
     public boolean contour_to_tile;

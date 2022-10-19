@@ -1759,37 +1759,18 @@ public class Client extends GameApplet {
             for (int y = 0; y < 104; y++) {
                 long id = scene.get_ground_decor_uid(plane, x, y);
                 if (id != 0L) {
-                    int index = ObjectDefinition.get(get_object_key(id)).minimap_function_id;
-                    //Debugging code, useful for finding objects for hardcoding map IDs
-                    //To test if the object is invisible (and thus likely used for map functions)
-                    //Make sure to spawn with ::object and see if it's invisible.
-                   /* if (ObjectDefinition.get(get_object_key(id)).minimap_function_id != -1) {
-                        //Uncomment for finding invisible objects for map functions.
-                        //System.out.println("Displaying Objects attached to MapFunctions, Object ID: " + id + ", MapFunction ID: " + ObjectDefinition.get(id).mapIcon);
-                    }
-                        System.out.println("Displaying Objects attached to MapFunctions, Object ID: " + get_object_key(id) + ", MapFunction ID: " + ObjectDefinition.get(get_object_key(id)).minimap_function_id);
-                    */
-                    //Invisible object near slayer tower basement dungeon
-                    /*if (id == 14108) {
-                        index = 86;
-                    }*/
+                    int index = ObjectDefinition.get(get_object_key(id)).minimapFunction;
                     if (index >= 0) {
-                        int hintX = x;
-                        int hintY = y;
-                        if (index >= 15 && index <= 67) {
-                            index -= 2;
-                        } else if (index >= 68 && index <= 84) {
-                            index -= 1;
+                        int sprite = AreaDefinition.lookup(index).spriteId;
+                        if (sprite != -1) {
+                            int hintX = x;
+                            int hintY = y;
+                            System.out.println("Area id: "+index);
+                            minimapHint[objectIconCount] =  mapFunctions[sprite];
+                            minimapHintX[objectIconCount] = hintX;
+                            minimapHintY[objectIconCount] = hintY;
+                            objectIconCount++;
                         }
-                        // Custom ken code, fix lumbridge crash, coords 3261, 3271 the array index is
-                        // like 619 for some reason, so set it to 0.
-                        else if (index > 100) {
-                            index = 0;
-                        }
-                        minimapHint[objectIconCount] = mapFunctions[index];
-                        minimapHintX[objectIconCount] = hintX;
-                        minimapHintY[objectIconCount] = hintY;
-                        objectIconCount++;
                     }
                 }
             }
@@ -9821,6 +9802,7 @@ resetsidebars();
                 hintIconDrawType = 0;
                 menuActionRow = 0;
                 menuOpen = false;
+                informationFile.write();
                 super.idle = 0;
                 for (int index = 0; index < 100; index++)
                     chatMessages[index] = null;
@@ -10758,8 +10740,8 @@ resetsidebars();
 
             Archive media_archive = request_archive(4, "2d graphics", "media", 40);
           //  backgroundFix = spriteCache.get(1847);
-            accountManager = new AccountManager(this, spriteCache.get(1850));
-            accountManager.loadAccounts();
+//            accountManager = new AccountManager(this, spriteCache.get(1850));
+//            accountManager.loadAccounts();
             saveButton = spriteCache.get(1851);
 
             if (ClientConstants.repackIndexOne) {
@@ -10830,7 +10812,7 @@ resetsidebars();
             System.out.println("Loaded " + mapScenes.length + " map scenes loading OSRS version " + ClientConstants.OSRS_DATA_VERSION + " and SUB version " + ClientConstants.OSRS_DATA_SUB_VERSION);
 
             try {
-                for (int index = 0; index < mapFunctions.length; index++) {
+                for (int index = 0; index < 124; index++) {
                     mapFunctions[index] = new SimpleImage(media_archive, "mapfunction", index);
                 }
             } catch (Exception e) {
@@ -10893,7 +10875,7 @@ resetsidebars();
             int j5 = (int) (Math.random() * 21D) - 10;
             int k5 = (int) (Math.random() * 21D) - 10;
             int l5 = (int) (Math.random() * 41D) - 20;
-            for (int index = 0; index < mapFunctions.length; index++) {
+            for (int index = 0; index < 119; index++) {
                 if (mapFunctions[index] != null) {
                     mapFunctions[index].blend(i5 + l5, j5 + l5, k5 + l5);
                 }
@@ -10936,6 +10918,7 @@ resetsidebars();
             ObjectDefinition.init(config_archive);
             FloDefinition.init(config_archive);
             NpcDefinition.init(config_archive);
+            AreaDefinition.init(config_archive);
             IdentityKit.init(config_archive);
             SpotAnimation.init(config_archive);
             VariableParameter.init(config_archive);
@@ -11030,6 +11013,11 @@ resetsidebars();
         setting.load();
         setting.update();
         setting.toggleVarbits();
+        informationFile.read();
+        if (informationFile.isUsernameRemembered()) {
+            myUsername = informationFile.getStoredUsername();
+            myPassword = informationFile.getStoredPassword();
+        }
         OptionTabWidget.updateSettings();
         Keybinding.updateInterface();
         Save.load();
@@ -11077,6 +11065,7 @@ resetsidebars();
             if (ClientConstants.DISPLAY_CLIENT_LOAD_TIME) {
                 System.out.println("It took " + clientLoadDifference + " ms to load the client.");
             }
+
             return;
         } catch (Exception exception) {
             exception.printStackTrace();
@@ -15136,6 +15125,10 @@ resetsidebars();
 
 loginBoxImageProducer.init();
 titleBoxIndexedImage.draw(0,0);
+        if (ClientConstants.DEBUG_MODE) {
+            adv_font_regular.draw("cursor_x: " + super.cursor_x, 10, 20, 0xFFFFFF, 0);
+            adv_font_regular.draw("cursor_y: " + super.cursor_y, 10, 40, 0xFFFFFF, 0);
+        }
 
         char c = '\u0168';
         char c1 = '\310';
@@ -15170,12 +15163,12 @@ titleButtonIndexedImage.draw(l - 73, k1 - 20);
 
                 j += 30;
             }
-            adv_font_regular.draw("Username:",  c / 2 - 130, j, 0xffffff, true);
+            adv_font_bold.draw("Username:",  c / 2 - 100, j, 0xffffff, true);
 
- adv_font_regular.draw(myUsername + (loginScreenCursorPos == 0 & game_tick % 40 < 20 ? "@yel@|" : ""),  c / 2 - 70, j, 0xffffff, true);
-            j += 15;
-            adv_font_regular.draw(StringUtils.passwordAsterisks(myPassword) + (((this.loginScreenCursorPos == 1 ? 1 : 0) & (game_tick % 40 < 20 ? 1 : 0)) != 0 ? "|" : ""), c / 2 - 70, j, 0xffffff, true);
-            adv_font_regular.draw("Password:",  c / 2 - 130, j, 0xffffff, true);
+            adv_font_bold.draw(myUsername + (loginScreenCursorPos == 0 & game_tick % 40 < 20 ? "@yel@|" : ""),  c / 2 - 30, j, 0xffffff, true);
+            j += 18;
+            adv_font_regular.draw(StringUtils.passwordAsterisks(myPassword) + (((this.loginScreenCursorPos == 1 ? 1 : 0) & (game_tick % 40 < 20 ? 1 : 0)) != 0 ? "|" : ""), c / 2 - 30, j, 0xffffff, true);
+            adv_font_bold.draw("Password:",  c / 2 - 100, j, 0xffffff, true);
             j += 15;
             if (!flag) {
                 int i1 = c / 2 - 80;
@@ -15187,6 +15180,15 @@ titleButtonIndexedImage.draw(l - 73, k1 - 20);
                 titleButtonIndexedImage.draw(i1 - 73, l1 - 20);
                 adv_font_regular.draw_centered("Cancel",i1,l1+5,0xffffff, true);
             }
+            int rememberhoverx = 140;
+            int rememberhovery = 170;
+            if (!informationFile.isUsernameRemembered()) {
+                spriteCache.get(546).drawSprite(rememberhoverx, rememberhovery);
+            } else {
+                spriteCache.get(547).drawSprite(rememberhoverx, rememberhovery);
+            }
+            adv_font_small.draw_centered("@yel@Save account",210,182,0xffffff, true);
+
         }
         if (loginScreenState == 3) {
             adv_font_regular.draw_centered("Cancel",c/2,c1/2-60,0xffff00, true);
@@ -15204,10 +15206,6 @@ titleButtonIndexedImage.draw(l - 73, k1 - 20);
 
             titleButtonIndexedImage.draw(j1 - 73, i2 - 20);
             adv_font_regular.draw_centered("Cancel",j1,i2+5,0xffffff, true);
-        }
-        if (ClientConstants.DEBUG_MODE) {
-//            adv_font_regular.draw("cursor_x: " + super.cursor_x, 10, 20, 0xFFFFFF, 0);
-//            adv_font_regular.draw("cursor_y: " + super.cursor_y, 10, 40, 0xFFFFFF, 0);
         }
 
 
@@ -15641,6 +15639,15 @@ public void processLoginScreenInput() {
                     return;
                 }
             }
+            if (super.click_type == 1 && super.click_y >= 340 && super.click_y <= 360
+                && super.click_x >= 340 && super.click_x <= 356) {
+                informationFile.setUsernameRemembered(!informationFile.isUsernameRemembered());
+                if (informationFile.isUsernameRemembered()) {
+                    informationFile.setStoredUsername(myUsername);
+                    informationFile.setStoredPassword(myPassword);
+                }
+            }
+
             i1 = super.myWidth / 2 + 80;
             if (super.click_type == 1 && super.click_x >= i1 - 75 && super.click_x <= i1 + 75 && super.click_y >= k1 - 20 && super.click_y <= k1 + 20) {
                 loginScreenState = 0;
@@ -18310,7 +18317,7 @@ public void processLoginScreenInput() {
         openWalkableInterface = -1;
         camera_horizontal_speed = new int[5];
         updateCharacterCreation = false;
-        mapFunctions = new SimpleImage[91]; // 116 new, revert back to 88 untill further notice
+        mapFunctions = new SimpleImage[124]; // 116 new, revert back to 88 untill further notice
         dialogueId = -1;
         maximumLevels = new int[SkillConstants.SKILL_COUNT];
         anIntArray1045 = new int[2_000];
@@ -18429,6 +18436,7 @@ public void processLoginScreenInput() {
     public int camera_abs_x;
     public int camera_abs_z;
     public int camera_abs_y;
+    private InformationFile informationFile = new InformationFile();
     private int cam_curve_y;
     private int cam_curve_x;
     private int myPrivilege, donatorPrivilege;

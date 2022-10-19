@@ -18,12 +18,13 @@ public class GambleWidget extends Widget {
     }
 
     private static void firstScreen(AdvancedFont[] font) {
-        Widget widget = addTabInterface(16200);
+        Widget widget = addTabInterface(26200);
         addSprite(16201, 1428);
         closeButton(16202, 24, 25, true);
-        addText(16203, "Gambling with Patrick", font, 2, 0xF7AA25, true, true);
+        addText(26203, "Gambling with Patrick", font, 2, 0xF7AA25, true, true);
+        //addText(1739, "In the fix", font, 1, 0xF7AA25, true, true);
         addText(16204, "Flower poker", font, 1, 0xF7AA25, true, true);
-        addConfigButton(16205, 16200, 491, 547, "Select", GAMBLE_FLOWER_POKER, 0, OPTION_OK);
+        addConfigButton(16205, 26200, 491, 547, "Select", GAMBLE_FLOWER_POKER, 0, OPTION_OK);
         /*addText(16206, "55x2", font, 1, 0xF7AA25, true, true);
         addConfigButton(16207, 16200, 491, 547, "Select", GAMBLE_55X2_WE_HOST, 0, OPTION_OK);
         addText(16208, "Blackjack", font, 1, 0xF7AA25, true, true);
@@ -76,7 +77,7 @@ public class GambleWidget extends Widget {
         widget.totalChildren(15);
         widget.child(0, 16201, 12,10);
         widget.child(1, 16202, 475,20);
-        widget.child(2, 16203, 255,20);
+        widget.child(2, 26203, 255,20);
         widget.child(3, 16204, 77,211);
         widget.child(4, 16205, 20,211);
         /*widget.child(5, 16206, 55,234);
@@ -98,7 +99,7 @@ public class GambleWidget extends Widget {
     }
 
     private static void secondScreen(AdvancedFont[] font) {
-        Widget widget = addTabInterface(15350);
+        Widget widget = addTabInterface(25350);
         addSprite(15351, 1429);
         addText(15352, "Gambling with: Patrick89123 - Are you sure you wish to gamble?", font, 2, 0xF7AA25, false, true);
         addHoverButton(15353, 1433, 114, 25, "Accept", -1, 15354, 1);
