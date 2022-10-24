@@ -1,15 +1,23 @@
 package com.ferox;
 
-import com.ferox.util.Assets;
+import com.ferox.GameFrame.MotionPanel;
+import com.ferox.util.ResourceLoader;
+import net.miginfocom.swing.MigLayout;
 
 import javax.imageio.ImageIO;
+import javax.swing.*;
+import javax.swing.border.EmptyBorder;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.URL;
 
-public final class GameFrame extends Frame {
+public final class gameFrame extends Frame {
 
     private final GameApplet applet;
     public Toolkit toolkit = Toolkit.getDefaultToolkit();
@@ -17,30 +25,33 @@ public final class GameFrame extends Frame {
     public int screenWidth = (int) screenSize.getWidth();
     public int screenHeight = (int) screenSize.getHeight();
     private static final long serialVersionUID = 1L;
+    public static JPanel menuPanel;
+    private static JFrame frame;
+    public static JLabel text;
 
-    public GameFrame(GameApplet applet, int width, int height, boolean resizable, boolean fullscreen) {
+    public gameFrame(GameApplet applet, int width, int height, boolean resizable, boolean fullscreen) {
         this.applet = applet;
         if (ClientConstants.production || !ClientConstants.DISPLAY_CLIENT_VERSION_IN_TITLE) {
             this.setTitle(ClientConstants.CLIENT_NAME);
         } else {
             this.setTitle(ClientConstants.CLIENT_NAME + " - Version " + ClientConstants.CLIENT_VERSION.charAt(0));
         }
+        this.setLayout(new BorderLayout());
         this.setResizable(resizable);
-        this.setUndecorated(fullscreen);
+
+        this.setUndecorated(true);
+        this.setEnabled(true);
         this.setFocusTraversalKeysEnabled(false);
         this.setBackground(Color.BLACK);
 
-        // Load and set the taskbar icon
-        URL url = Assets.getResource("assets", "icon.png");
-        if (url != null) {
-            try {
-                setIconImage(ImageIO.read(url));
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        } else {
-            System.out.println("Unable to find resource: [icon.png]");
-        }
+      //  menuPanel = new MotionPanel(frame);
+        MigLayout layout = new MigLayout("insets 0 0 0 0", "[:20:20][:90:90]550[:20:20][:20:20][:20:20][:20:20]");
+        //  MigLayout layout = new MigLayout("insets 0 0 0 0, fill, debug", "[right,:60:60][][left][left,:20:20]");
+
+        menuPanel.setLayout(layout);
+        menuPanel.setPreferredSize(new Dimension(765, 26));//can change this dynamically
+
+        this.add(menuPanel);
 
         this.setVisible(true);
         Insets insets = getInsets();
@@ -69,8 +80,8 @@ public final class GameFrame extends Frame {
             }
         });
         this.toFront();
+        this.add(menuPanel, BorderLayout.NORTH);
     }
-
     private void setWindowPosition() {
         GraphicsDevice device = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice();
 

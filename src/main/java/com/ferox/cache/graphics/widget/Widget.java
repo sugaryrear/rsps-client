@@ -388,6 +388,7 @@ public class Widget {
         interfaceLoader = interfaces;
         WildernessWidget.unpack(font);
         SpawnTab.unpack(font);
+        spellFilters.unpack(font);
         TopPkersWidget.unpack(font);
         RaidsWidget.unpack(font);
         DailyTasksWidget.unpack(font);

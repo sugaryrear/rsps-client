@@ -101,7 +101,7 @@ public class GambleWidget extends Widget {
     private static void secondScreen(AdvancedFont[] font) {
         Widget widget = addTabInterface(25350);
         addSprite(15351, 1429);
-        addText(15352, "Gambling with: Patrick89123 - Are you sure you wish to gamble?", font, 2, 0xF7AA25, false, true);
+        addText(25352, "Gambling with: Patrick89123 - Are you sure you wish to gamble?", font, 2, 0xF7AA25, false, true);
         addHoverButton(15353, 1433, 114, 25, "Accept", -1, 15354, 1);
         addHoveredButton(15354, 1432, 114, 25, 15355);
         addHoverButton(15356, 1431, 114, 25, "Decline", -1, 15357, 1);
@@ -140,7 +140,7 @@ public class GambleWidget extends Widget {
 
         widget.totalChildren(12);
         widget.child(0, 15351, 12,50);
-        widget.child(1, 15352, 48,59);
+        widget.child(1, 25352, 48,59);
         widget.child(2, 15353, 210,100);
         widget.child(3, 15354, 210,100);
         widget.child(4, 15356, 210,160);

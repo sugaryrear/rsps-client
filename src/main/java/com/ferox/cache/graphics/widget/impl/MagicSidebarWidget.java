@@ -190,10 +190,14 @@ public class MagicSidebarWidget extends Widget {
         widget.child_x[15] = 154;
 
         addSpellLarge2(34674, 563, 560, 562, 1, 1, 1, 30012, 30009, 30011, 84, "Teleport to Bounty<br>Target", "Teleports you near your Bounty<br>Hunter Target", font, 948, 949, 7, 5);
-        setChildren(3, newInterfaceId);
+        hoverButton10(59181,"Filters", 1884, 1884, "", font, 1, 0xdb9c22,0xdb9c22,true);
+
+        setChildren(4, newInterfaceId);
         setBounds(12855, 0, 0, 0, newInterfaceId);
-        setBounds(34674, 150, 126, 1, newInterfaceId);
-        setBounds(34675, 5, -5, 2, newInterfaceId);
+        setBounds(34674, 150, 126, 2, newInterfaceId);
+        setBounds(34675, 5, -5, 3, newInterfaceId);
+        setBounds(59181, 70, 230, 1, newInterfaceId);
+
     }
 
     private static void lunar_magic_book(AdvancedFont[] tda) {

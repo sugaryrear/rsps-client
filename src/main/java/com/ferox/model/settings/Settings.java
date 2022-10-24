@@ -464,11 +464,12 @@ public class Settings {
                 return true;
 
             case FIXED_MODE_BUTTON:
-                Client.singleton.frameMode(765, 503);
+          //     Client.singleton.frameMode(765, 503);
+                    Client.singleton.frameMode(Client.ScreenMode.FIXED);
                 return true;
 
             case RESIZABLE_MODE_BUTTON:
-                Client.singleton.frameMode(766, 559);
+                Client.singleton.frameMode(Client.ScreenMode.RESIZABLE);
                 return true;
 
             case HOUSE_OPTIONS_BUTTON:

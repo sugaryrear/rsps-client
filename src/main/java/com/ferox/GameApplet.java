@@ -31,7 +31,7 @@ public class GameApplet extends Canvas implements Runnable, MouseListener, Mouse
     protected int myHeight;
     Graphics graphics;
     ProducingGraphicsBuffer fullGameScreen;
-    GameFrame gameFrame;
+    gameFrame gameFrame;
     private boolean clear_screen;
     boolean awt_focus;
     int idle;
@@ -81,7 +81,7 @@ public class GameApplet extends Canvas implements Runnable, MouseListener, Mouse
         }
 
         if (!createdByApplet) {
-            gameFrame = new GameFrame(this, width, height, resizable, full);
+            gameFrame = new gameFrame(this, width, height, resizable, full);
             gameFrame.addWindowListener(this);
         }
 
@@ -147,7 +147,7 @@ public class GameApplet extends Canvas implements Runnable, MouseListener, Mouse
         isApplet = false;
         myWidth = forceWidth = w;
         myHeight = forceHeight = h;
-        gameFrame = new GameFrame(this, myWidth, myHeight, Client.screen == Client.ScreenMode.RESIZABLE, Client.screen == Client.ScreenMode.FULLSCREEN);
+        gameFrame = new gameFrame(this, myWidth, myHeight, Client.screen == Client.ScreenMode.RESIZABLE, Client.screen == Client.ScreenMode.FULLSCREEN);
         gameFrame.setFocusTraversalKeysEnabled(false);
         graphics = getGameComponent().getGraphics();
         fullGameScreen = new ProducingGraphicsBuffer(myWidth, myHeight);
@@ -155,7 +155,7 @@ public class GameApplet extends Canvas implements Runnable, MouseListener, Mouse
     }
 
     final void initClientFrame(int w, int h) {
-        isApplet = true;
+        isApplet = false;
         myWidth = forceWidth = w;
         myHeight = forceHeight = h;
         graphics = getGameComponent().getGraphics();
@@ -164,14 +164,14 @@ public class GameApplet extends Canvas implements Runnable, MouseListener, Mouse
     }
 
     static long lastloop;
-     /**
+    /**
      * A queue of synchronization tasks.
      */
     private static final java.util.Queue<Runnable> syncTasks = new ConcurrentLinkedQueue<>();
     public static void addSyncTask(Runnable runnable) {
         syncTasks.add(runnable);
     }
-     /**
+    /**
      * Run all pending tasks from other threads.
      */
     private void runPendingTasks() {
@@ -254,7 +254,7 @@ public class GameApplet extends Canvas implements Runnable, MouseListener, Mouse
             }
             String sleepy = "";
             try {
-                    sleepy = "sleepy "+k;
+                sleepy = "sleepy "+k;
                 Thread.sleep(k);
             } catch (InterruptedException interruptedexception) {
                 i1++;
@@ -280,22 +280,22 @@ public class GameApplet extends Canvas implements Runnable, MouseListener, Mouse
             processDrawing();
             if (dump_requested) {
                 System.out.println((new StringBuilder()).append("ntime:")
-                        .append(l2).toString());
+                    .append(l2).toString());
                 for (int k2 = 0; k2 < 10; k2++) {
                     int i3 = ((i - k2 - 1) + 20) % 10;
                     System.out.println((new StringBuilder()).append("otim")
-                            .append(i3).append(":").append(aLongArray7[i3])
-                            .toString());
+                        .append(i3).append(":").append(aLongArray7[i3])
+                        .toString());
                 }
 
                 System.out.println((new StringBuilder()).append("fps:")
-                        .append(fps).append(" ratio:").append(j)
-                        .append(" count:").append(l).toString());
+                    .append(fps).append(" ratio:").append(j)
+                    .append(" count:").append(l).toString());
                 System.out.println((new StringBuilder()).append("del:")
-                        .append(k).append(" deltime:").append(delay)
-                        .append(" mindel:").append(min_delay).toString());
+                    .append(k).append(" deltime:").append(delay)
+                    .append(" mindel:").append(min_delay).toString());
                 System.out.println((new StringBuilder()).append("intex:")
-                        .append(i1).append(" opos:").append(i).toString());
+                    .append(i1).append(" opos:").append(i).toString());
                 //shouldDebug = false;
                 i1 = 0;
             }
@@ -840,14 +840,14 @@ public class GameApplet extends Canvas implements Runnable, MouseListener, Mouse
         graphics.fillRect(Client.window_width / 2 - 150, y + 2, percentage * 3, 30);
         graphics.setColor(Color.black);
         graphics.fillRect((Client.window_width / 2 - 150) + percentage * 3, y + 2,
-                300 - percentage * 3, 30);
+            300 - percentage * 3, 30);
         graphics.setFont(font);
         graphics.setColor(Color.white);
         graphics.drawString(loadingText,
-                (Client.window_width - fontmetrics.stringWidth(loadingText)) / 2,
-                y + 22);
+            (Client.window_width - fontmetrics.stringWidth(loadingText)) / 2,
+            y + 22);
         graphics.drawString("",
-                (Client.window_width - fontmetrics1.stringWidth("")) / 2, y - 8);
+            (Client.window_width - fontmetrics1.stringWidth("")) / 2, y - 8);
     }
 
     GameApplet() {

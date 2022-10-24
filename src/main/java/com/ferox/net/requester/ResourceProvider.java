@@ -61,16 +61,17 @@ public final class ResourceProvider extends Provider implements Runnable {
     private final CRC32 crc32;
 
     public String currentDownload = "";
+
     private String forId(int type) {
-        switch(type) {
-        case 1:
-            return "Model";
-        case 2:
-            return "Animation";
-        case 3:
-            return "Sound";
-        case 4:
-            return "Map";
+        switch (type) {
+            case 1:
+                return "Model";
+            case 2:
+                return "Animation";
+            case 3:
+                return "Sound";
+            case 4:
+                return "Map";
         }
         return "";
     }
@@ -112,7 +113,7 @@ public final class ResourceProvider extends Provider implements Runnable {
                 }
 
                 if (current != null) {
-                    currentDownload = "Downloading "+forId(current.dataType + 1)+" "+current.ID+"";
+                    currentDownload = "Downloading " + forId(current.dataType + 1) + " " + current.ID + "";
                     idleTime = 0;
                     if (length == 0) {
                         SignLink.reporterror("Rej: " + type + "," + file);
@@ -120,9 +121,10 @@ public final class ResourceProvider extends Provider implements Runnable {
                         if (current.incomplete)
                             synchronized (complete) {
                                 complete.insertBack(current);
-                            } else {
-                                current.remove();
                             }
+                        else {
+                            current.remove();
+                        }
                         current = null;
                     } else {
                         if (current.buffer == null && sector == 0)
@@ -144,7 +146,8 @@ public final class ResourceProvider extends Provider implements Runnable {
                     data = current.buffer;
                     read = completedSize;
                 }
-                for (int skip = 0; skip < remainingData; skip += inputStream.read(data, skip + read, remainingData - skip));
+                for (int skip = 0; skip < remainingData; skip += inputStream.read(data, skip + read, remainingData - skip))
+                    ;
                 if (remainingData + completedSize >= data.length && current != null) {
                     if (clientInstance.indices[0] != null)
                         clientInstance.indices[current.dataType + 1].writeFile(data.length, data, current.ID);
@@ -155,9 +158,10 @@ public final class ResourceProvider extends Provider implements Runnable {
                     if (current.incomplete)
                         synchronized (complete) {
                             complete.insertBack(current);
-                        } else {
-                            current.remove();
                         }
+                    else {
+                        current.remove();
+                    }
                 }
                 remainingData = 0;
             }
@@ -180,6 +184,7 @@ public final class ResourceProvider extends Provider implements Runnable {
     private final String crcNames[] = {"model_crc", "anim_crc", "midi_crc", "map_crc"};
     private final int[][] crcs = new int[crcNames.length][];
     private boolean debugCheapHaxValues = false;
+
     public void initialize(Archive archive, Client client) {
 
         for (int i = 0; i < crcNames.length; i++) {
@@ -198,22 +203,17 @@ public final class ResourceProvider extends Provider implements Runnable {
         }
 
 
-        byte[] data = archive.get("map_index");
+        byte[] data = ClientConstants.LOAD_OSRS_DATA_FROM_CACHE_DIR ? FileUtils.read(ClientConstants.DATA_DIR + "/maps/map_index") : archive.get("map_index");
         Buffer stream = new Buffer(data);
         int j1 = stream.readUShort();//data.length / 6;
         areas = new int[j1];
         mapFiles = new int[j1];
         landscapes = new int[j1];
-        file_amounts[3] = j1;
+        file_amounts[3] = data.length;
         for (int i2 = 0; i2 < j1; i2++) {
             areas[i2] = stream.readUShort();
             mapFiles[i2] = stream.readUShort();
             landscapes[i2] = stream.readUShort();
-            final int finalI2 = i2;
-            //To find region ID (to get coords) from cheapHaxValues array:
-            if (debugCheapHaxValues && Arrays.stream(cheapHaxValues).anyMatch(id -> id == mapFiles[finalI2])) {
-                System.out.println("Area: " + areas[i2]);
-            }
             //The cheapHaxValues regions seem to be tutorial island, and a couple quest areas, and sorceress's garden
         }
 
@@ -471,85 +471,14 @@ public final class ResourceProvider extends Provider implements Runnable {
         for (int area = 0; area < areas.length; area++) {
             if (areas[area] == code) {
                 if (landscapeOrObject == 0) {
-                    return mapFiles[area] > 3535 ? -1 : mapFiles[area];
+                    return mapFiles[area] > 9999 ? -1 : mapFiles[area];
                 } else {
-                    return landscapes[area] > 3535 ? -1 : landscapes[area];
+                    return landscapes[area] > 9999 ? -1 : landscapes[area];
                 }
             }
         }
-        //End of originally commented out code uncommented for OSRS data 190
-
-        int regionId = (regionX << 8) + regionY;
-        for (int j1 = 0; j1 < areas.length; j1++)
-            if (areas[j1] == regionId) {
-                if (landscapeOrObject == 0) {
-                    //Soulwars
-                    if (mapFiles[j1] >= 3700 && mapFiles[j1] <= 3840)
-                        return mapFiles[j1];
-                    for (int cheapHax : mapFiles)
-                        if (mapFiles[j1] == cheapHax)
-                            return mapFiles[j1];
-                    return mapFiles[j1] > 3535 ? -1 : mapFiles[j1];
-                } else {
-                    if (landscapes[j1] >= 3700 && landscapes[j1] <= 3840)
-                        return landscapes[j1];
-                    for (int cheapHax : cheapHaxValues)
-                        if (landscapes[j1] == cheapHax)
-                            return landscapes[j1];
-                    return landscapes[j1] > 3535 ? -1 : landscapes[j1];
-                }
-            }
         return -1;
-
-        /*int regionId = (regionX << 8) + regionY;
-        for (int j1 = 0; j1 < areas.length; j1++)
-            if (areas[j1] == regionId) {
-                if (landscapeOrObject == 0) {
-                    return mapFiles[j1];
-                } else {
-                    return landscapes[j1];
-                }
-            }*/
     }
-    
-    int[] cheapHaxValues = new int[]{
-            3627,            3628,
-            3655,            3656,
-            3625,            3626,
-            3629,            3630,
-            4071,           4072,
-            5253,              1816,
-            1817,            3653,
-            3654,            4067,
-            4068,            3639,
-            3640,            1976,
-            1977,            3571,
-            3572,            5129,
-            5130,            2066,
-            2067,            3545,
-            3546,            3559,
-            3560,            3569,
-            3570,            3551,
-            3552,            3579,
-            3580,            3575,
-            3576,            1766,
-            1767,            3547,
-            3548,            3682,
-            3683,            3696,
-            3697,            3692,
-            3693,            4013,
-            4079,            4080,
-            4082,            3996,
-            4083,            4084,
-            4075,            4076,
-            3664,            3993,
-            3994,            3995,
-            4077,            4078,
-            4073,            4074,
-            4011,            4012,
-            3998,            3999,
-            4081,
-    };
 
     public void requestExtra(byte priority, int type, int file) {
         if (clientInstance.indices[0] == null)
@@ -701,12 +630,12 @@ public final class ResourceProvider extends Provider implements Runnable {
 
     /**
      * Grabs the checksum of a file from the cache.
+     *
      * @param type The type of file (0 = model, 1 = anim, 2 = midi, 3 = map).
-     * @param id The id of the file.
+     * @param id   The id of the file.
      * @return
      */
-    private boolean crcMatches(int expectedValue, byte crcData[])
-    {
+    private boolean crcMatches(int expectedValue, byte crcData[]) {
         if (crcData == null || crcData.length < 2)
             return false;
         int length = crcData.length - 2;
@@ -715,12 +644,14 @@ public final class ResourceProvider extends Provider implements Runnable {
         int crcValue = (int) crc32.getValue();
         return crcValue == expectedValue;
     }
+
     public void writeAll() {
         for (int i = 0; i < crcs.length; i++) {
             writeChecksumList(i);
             writeVersionList(i);
         }
     }
+
     public int getChecksum(int type, int id) {
         int crc = -1;
         byte[] data = clientInstance.indices[type + 1].decompress(id);
@@ -732,6 +663,7 @@ public final class ResourceProvider extends Provider implements Runnable {
         }
         return crc;
     }
+
     public int getVersion(int type, int id) {
         int version = -1;
         byte[] data = clientInstance.indices[type + 1].decompress(id);
@@ -741,6 +673,7 @@ public final class ResourceProvider extends Provider implements Runnable {
         }
         return version;
     }
+
     public void writeChecksumList(int type) {
         try {
             DataOutputStream out = new DataOutputStream(new FileOutputStream(SignLink.findCacheDir() + type + "_crc.dat"));
@@ -749,12 +682,13 @@ public final class ResourceProvider extends Provider implements Runnable {
                 out.writeInt(getChecksum(type, index));
                 total++;
             }
-            System.out.println(type+"-"+total);
+            System.out.println(type + "-" + total);
             out.close();
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
+
     public void writeVersionList(int type) {
         try {
             DataOutputStream out = new DataOutputStream(new FileOutputStream(SignLink.findCacheDir() + type + "_version.dat"));

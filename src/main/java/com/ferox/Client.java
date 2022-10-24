@@ -1,5 +1,6 @@
 package com.ferox;
 
+import com.ferox.GameFrame.ClientWindow;
 import com.ferox.cache.Archive;
 import com.ferox.cache.FileStore;
 import com.ferox.cache.FileStore.Store;
@@ -282,7 +283,49 @@ public class Client extends GameApplet {
     }
 
     public enum ScreenMode {
-        FIXED, RESIZABLE, FULLSCREEN;
+
+        FIXED(1, 765, 503, false, false),
+        RESIZABLE(2, 902, 702, true, false),
+        FULLSCREEN(3, 500, 500, false, true);
+
+        private final int numericalValue;
+
+        private final int width;
+
+        private final int height;
+
+        private final boolean resizable;
+
+        private final boolean undecorated;
+
+        public int getNumericalValue() {
+            return numericalValue;
+        }
+
+        public int getWidth() {
+            return width;
+        }
+
+        public int getHeight() {
+            return height;
+        }
+
+        public boolean isResizable() {
+            return resizable;
+        }
+
+        public boolean isUndecorated() {
+            return undecorated;
+        }
+
+        ScreenMode(int numericalValue, int width, int height, boolean resizable, boolean undecorated) {
+            this.numericalValue = numericalValue;
+            this.width = width;
+            this.height = height;
+            this.resizable = resizable;
+            this.undecorated = undecorated;
+        }
+
     }
 
     private int widgetId = 0;
@@ -373,6 +416,8 @@ public class Client extends GameApplet {
     public static ScreenMode screen = ScreenMode.FIXED;
     public static int window_width = 765;
     public static int window_height = 503;
+    //    public static int window_width = screen.equals(ScreenMode.FIXED) ? 765 : 0;
+//    public static int window_height = screen.equals(ScreenMode.FIXED) ? 503 : 0;
     public static int gamescreen_width = 512;
     public static int gamescreen_height = 334;
     public static int zoom_distance = 900;
@@ -437,37 +482,90 @@ public class Client extends GameApplet {
         showTabComponents = screen == ScreenMode.FIXED ? true : showTabComponents;
     }
 
-    private void frameMode(ScreenMode screenMode) {
-        int width = 765;
-        int height = 503;
-        if (screen != screenMode) {
-            screen = screenMode;
-            if (screenMode == ScreenMode.FIXED) {
-                window_width = forceWidth = width;
-                window_height = forceHeight = height;
-                zoom_distance = 900;
-            } else if (screenMode == ScreenMode.RESIZABLE) {
-                width = 766;
-                height = 559;
-                window_width = width;
-                window_height = height;
-                forceWidth = forceHeight = -1;
-                zoom_distance = 900;
-            } else if (screenMode == ScreenMode.FULLSCREEN) {
-                width = (int) Toolkit.getDefaultToolkit().getScreenSize().getWidth();
-                height = (int) Toolkit.getDefaultToolkit().getScreenSize().getHeight();
-                zoom_distance = 900;
-                window_width = super.myWidth = width;
-                window_height = super.myHeight = height;
-                forceWidth = forceHeight = -1;
-            }
-            rebuildFrameSize(screenMode, window_width, window_height);
-            updateScreen();
-        }
-        showChatComponents = screenMode == ScreenMode.FIXED ? true : showChatComponents;
-        showTabComponents = screenMode == ScreenMode.FIXED ? true : showTabComponents;
-    }
+    public void frameMode(ScreenMode mode) {
 
+        if (screen == mode)
+            return;
+
+        JFrame component = ClientWindow.getFrame();//references the original jframe you made in ClientWindow
+
+        component.dispose();
+        screen = mode;
+
+        component.setMinimumSize(new Dimension(765, mode == ScreenMode.FIXED ? 503 : 620));
+
+
+        component.setResizable(mode.isResizable());
+        Insets insets = ClientWindow.getInset();
+
+
+        int clientWidth = mode.getWidth();
+        int clientHeight = mode.getHeight();
+
+
+
+        final int xInsetOffset = insets.left + insets.right;
+        int yInsetOffset = insets.top + insets.bottom;
+
+        if(mode == ScreenMode.FIXED)
+            yInsetOffset +=25;
+
+
+        int totalClientWidth = clientWidth;
+        int totalClientHeight = clientHeight;
+        if (mode == ScreenMode.FIXED) {
+            zoom_distance = 600;
+            camera_pos = 1;
+
+        } else if (mode == ScreenMode.RESIZABLE) {
+
+            zoom_distance = 700;
+            camera_pos = 1;
+            //   WorldController.viewDistance = 10;
+        } else if (mode == ScreenMode.FULLSCREEN) {
+            zoom_distance = 800;
+            //   WorldController.viewDistance = 10;
+        }
+
+        if (mode == ScreenMode.FULLSCREEN) {
+            //if (SystemUtils.IS_OS_MAC)
+            component.setLocation(0, insets.top);
+            totalClientWidth = (int) MAXIMUM_SCREEN_BOUNDS.getWidth();
+            totalClientHeight = (int) MAXIMUM_SCREEN_BOUNDS.getHeight();
+        } else {
+            totalClientWidth += xInsetOffset;
+            totalClientHeight += yInsetOffset;
+        }
+        component.setSize(totalClientWidth, totalClientHeight);
+
+
+
+        window_width = totalClientWidth;
+        window_height = totalClientHeight;
+
+
+        gamescreen_width = screen == ScreenMode.FIXED ? 512 : totalClientWidth;
+        gamescreen_height = screen == ScreenMode.FIXED ? 334 : totalClientHeight;
+
+        if (mode != ScreenMode.FULLSCREEN)
+            component.setLocationRelativeTo(null);
+
+        component.setVisible(true);
+        graphics = super.getGameComponent().getGraphics();
+        if(mode == ScreenMode.RESIZABLE) { //this will fix the height weirdness associatd with the menubar
+            window_height = 702 - 26;
+            gamescreen_height = 702 - 26;
+        }
+        initClientFrame(gamescreen_width, gamescreen_height);
+        //   System.out.println(totalClientHeight+"");
+
+        updateScreen();
+
+        showChatComponents = screen == ScreenMode.FIXED ? true : showChatComponents;
+        showTabComponents = screen == ScreenMode.FIXED ? true : showTabComponents;
+    }
+    public static final Rectangle MAXIMUM_SCREEN_BOUNDS = GraphicsEnvironment.getLocalGraphicsEnvironment()
+        .getMaximumWindowBounds();
     private Stopwatch frameDelay = new Stopwatch();
     private Stopwatch loggedInWatch = new Stopwatch();
 
@@ -488,7 +586,36 @@ public class Client extends GameApplet {
         }
         updateGame();
     }
-
+    public static void updateGame() {
+        Rasterizer3D.set_clip(window_width, window_height);
+        fullscreen_texture_raster = Rasterizer3D.line_offsets;
+        Rasterizer3D.set_clip(
+            screen == ScreenMode.FIXED ? (chatboxImageProducer != null ? chatboxImageProducer.canvasWidth : 519)
+                : window_width,
+            screen == ScreenMode.FIXED ? (chatboxImageProducer != null ? chatboxImageProducer.canvasHeight : 165)
+                : window_height);
+        chatOffsets = Rasterizer3D.line_offsets;
+        Rasterizer3D.set_clip(
+            screen == ScreenMode.FIXED ? (tabImageProducer != null ? tabImageProducer.canvasWidth : 249)
+                : window_width,
+            screen == ScreenMode.FIXED ? (tabImageProducer != null ? tabImageProducer.canvasHeight : 335)
+                : window_height);
+        anIntArray1181 = Rasterizer3D.line_offsets;
+        Rasterizer3D.set_clip(gamescreen_width, gamescreen_height);
+        viewportOffsets = Rasterizer3D.line_offsets;
+        int ai[] = new int[9];
+        for (int i8 = 0; i8 < 9; i8++) {
+            int k8 = 128 + i8 * 32 + 15;
+            int l8 = 600 + k8 * 3;
+            int i9 = Rasterizer3D.SINE[k8];
+            ai[i8] = l8 * i9 >> 16;
+        }
+        SceneGraph.set_viewport(500, 800, gamescreen_width, gamescreen_height, ai);
+        if (loggedIn) {
+            gameScreenImageProducer = new ProducingGraphicsBuffer(gamescreen_width, gamescreen_height);
+            singleton.fullGameScreen = new ProducingGraphicsBuffer(window_width, window_height);
+        }
+    }
     /**
      * Cuts a string into more than one line if it exceeds the specified max width.
      *
@@ -553,36 +680,7 @@ public class Client extends GameApplet {
         singleton.rebuildFrame(width, height, screenMode == ScreenMode.RESIZABLE, screenMode == ScreenMode.FULLSCREEN);
     }
 
-    public static void updateGame() {
-        Rasterizer3D.set_clip(window_width, window_height);
-        fullscreen_texture_raster = Rasterizer3D.line_offsets;
-        Rasterizer3D.set_clip(
-            screen == ScreenMode.FIXED ? (chatboxImageProducer != null ? chatboxImageProducer.canvasWidth : 519)
-                : window_width,
-            screen == ScreenMode.FIXED ? (chatboxImageProducer != null ? chatboxImageProducer.canvasHeight : 165)
-                : window_height);
-        chatOffsets = Rasterizer3D.line_offsets;
-        Rasterizer3D.set_clip(
-            screen == ScreenMode.FIXED ? (tabImageProducer != null ? tabImageProducer.canvasWidth : 249)
-                : window_width,
-            screen == ScreenMode.FIXED ? (tabImageProducer != null ? tabImageProducer.canvasHeight : 335)
-                : window_height);
-        anIntArray1181 = Rasterizer3D.line_offsets;
-        Rasterizer3D.set_clip(gamescreen_width, gamescreen_height);
-        viewportOffsets = Rasterizer3D.line_offsets;
-        int ai[] = new int[9];
-        for (int i8 = 0; i8 < 9; i8++) {
-            int k8 = 128 + i8 * 32 + 15;
-            int l8 = 600 + k8 * 3;
-            int i9 = Rasterizer3D.SINE[k8];
-            ai[i8] = l8 * i9 >> 16;
-        }
-        SceneGraph.set_viewport(500, 800, gamescreen_width, gamescreen_height, ai);
-        if (loggedIn) {
-            gameScreenImageProducer = new ProducingGraphicsBuffer(gamescreen_width, gamescreen_height);
-            singleton.fullGameScreen = new ProducingGraphicsBuffer(window_width, window_height);
-        }
-    }
+
 
     public boolean getMousePositions() {
         if (mouseInRegion(window_width - (window_width <= 1000 ? 240 : 420),
@@ -697,23 +795,7 @@ public class Client extends GameApplet {
             return "?";
     }
 
-    public static final byte[] ReadFile(String fileName) {
-        try {
-            byte abyte0[];
-            File file = new File(fileName);
-            int i = (int) file.length();
-            abyte0 = new byte[i];
-            DataInputStream datainputstream = new DataInputStream(
-                new BufferedInputStream(new FileInputStream(fileName)));
-            datainputstream.readFully(abyte0, 0, i);
-            datainputstream.close();
-            return abyte0;
-        } catch (Exception e) {
-            e.printStackTrace();
-            addReportToServer(e.getMessage());
-            return null;
-        }
-    }
+
 
     private void drawInputField(Widget child, int interfaceX, int interfaceY, int x, int y, int width, int height) {
         int clickX = super.click_x, clickY = super.click_y;
@@ -819,32 +901,7 @@ public class Client extends GameApplet {
         return k == 337;
     }
 
-    private void clearHistory(int chatType) {
 
-        // Stops the opening of the tab
-        super.click_x = 0;
-        super.click_y = 0;
-
-        // Go through each message, compare its type..
-        outerLoop:
-        for (int i = 0; i < chatMessages.length; i++) {
-            if (chatMessages[i] == null)
-                continue;
-            if (chatMessages[i].getType() == chatType) {
-
-                // Don't clear this message if it was sent from another staff member.
-                if (!chatMessages[i].getName().equalsIgnoreCase(local_player.username)) {
-                    for (ChatCrown c : chatMessages[i].getCrowns()) {
-                        if (c.isStaff()) {
-                            continue outerLoop;
-                        }
-                    }
-                }
-
-                chatMessages[i] = null;
-            }
-        }
-    }
 
     private final int[] modeNamesX = {26, 86, 150, 212, 286, 349, 427},
         modeNamesY = {158, 158, 153, 153, 153, 153, 158}, channelButtonsX = {5, 71, 137, 203, 269, 335, 404};
@@ -1368,13 +1425,9 @@ public class Client extends GameApplet {
     /**
      * Initializes the client for startup
      */
-    public void initialize() {
+    public void init() {
         try {
-            nodeID = 10;
-            setHighMem();
-            isMembers = true;
-            SignLink.storeid = 32;
-            SignLink.startpriv(InetAddress.getLocalHost());
+
             initClientFrame(window_width, window_height);
         } catch (Exception exception) {
             exception.printStackTrace();
@@ -1765,7 +1818,7 @@ public class Client extends GameApplet {
                         if (sprite != -1) {
                             int hintX = x;
                             int hintY = y;
-                            System.out.println("Area id: "+index);
+                            //  System.out.println("Area id: "+index);
                             minimapHint[objectIconCount] =  mapFunctions[sprite];
                             minimapHintX[objectIconCount] = hintX;
                             minimapHintY[objectIconCount] = hintY;
@@ -2028,13 +2081,7 @@ public class Client extends GameApplet {
                 if (child.scrollMax > child.height)
                     handleScroll(childX + child.width, child.height, cursor_x, cursor_y, child, childY, child.scrollMax);
             } else {
-               /* if(child.id >= 25301) {
-                    System.err.println("Mouse x: " + cursor_x + " | Mouse y: " + cursor_y + " | Child x: " + childX + " | child y: " + childY + " | Child width: " + child.width + " | Child height: " + child.height);
-                    System.err.println("Expected: " + (cursor_x >= childX) + " | " + (cursor_y >= childY) + " | " + (cursor_x < childX + child.width) + " | " + (cursor_y < childY + child.height));
-                    System.err.println("To check: cursor_x >= childX cursor_x >= childX && cursor_y >= childY + && cursor_x < childX + child.width && cursor_y < childY + child.height");
 
-                    System.out.println("Mouse y: " + cursor_y + " | Child y: " + childY);
-                }*/
 
                 if (child.optionType == Widget.OPTION_OK && cursor_x >= childX && cursor_y >= childY
                     && cursor_x < childX + child.width && cursor_y < childY + child.height) {
@@ -3354,7 +3401,7 @@ public class Client extends GameApplet {
      */
     private void drawSideIcons() {
         int x = screen == ScreenMode.FIXED ? 0 : window_width - 247;
-        int y = screen == ScreenMode.FIXED ? 0 : window_height - 336;
+        int y = screen == ScreenMode.FIXED ? 0 : window_height   - 336;
 
         if (screen == ScreenMode.FIXED
             || screen != ScreenMode.FIXED && settings[ConfigUtility.SIDE_STONES_ARRANGEMENT_ID] == 0) {
@@ -3406,33 +3453,33 @@ public class Client extends GameApplet {
                     if (resizable_side_icon[tab] != -1) {
                         SimpleImage sprite = sideIcons[resizable_side_icon[tab]];
                         if (tab == 13) {
-                            spriteCache.get(336).drawAdvancedSprite(window_width - resizable_side_icon_x[tab], window_height - resizable_side_icon_y[tab]);
+                            spriteCache.get(336).drawAdvancedSprite(window_width - resizable_side_icon_x[tab], window_height   - resizable_side_icon_y[tab]);
                             continue;
                         }
                         if (tab == 2) {
                             if (questTabId == 0) {
-                                sprite.drawSprite(window_width - resizable_side_icon_x[tab], window_height - resizable_side_icon_y[tab]);
+                                sprite.drawSprite(window_width - resizable_side_icon_x[tab], window_height   - resizable_side_icon_y[tab]);
                                 continue;
                             } else if (questTabId == 1) {
-                                spriteCache.get(456).drawSprite(window_width - resizable_side_icon_x[tab], window_height - resizable_side_icon_y[tab]);
+                                spriteCache.get(456).drawSprite(window_width - resizable_side_icon_x[tab], window_height   - resizable_side_icon_y[tab]);
                                 continue;
                             } else if (questTabId == 2) {
-                                spriteCache.get(848).drawSprite(window_width - resizable_side_icon_x[tab], window_height - resizable_side_icon_y[tab]);
+                                spriteCache.get(848).drawSprite(window_width - resizable_side_icon_x[tab], window_height  - resizable_side_icon_y[tab]);
                                 continue;
                             }
                         } else if (tab == 6) {
                             if (spellbook == 0) {
-                                sprite.drawSprite(window_width - resizable_side_icon_x[tab], window_height - resizable_side_icon_y[tab]);
+                                sprite.drawSprite(window_width - resizable_side_icon_x[tab], window_height   - resizable_side_icon_y[tab]);
                                 continue;
                             } else if (spellbook == 1) {
-                                spriteCache.get(772).drawSprite(window_width - resizable_side_icon_x[tab], window_height - resizable_side_icon_y[tab]);
+                                spriteCache.get(772).drawSprite(window_width - resizable_side_icon_x[tab], window_height   - resizable_side_icon_y[tab]);
                                 continue;
                             } else if (spellbook == 2) {
-                                spriteCache.get(773).drawSprite(window_width - resizable_side_icon_x[tab], window_height - resizable_side_icon_y[tab]);
+                                spriteCache.get(773).drawSprite(window_width - resizable_side_icon_x[tab], window_height  - resizable_side_icon_y[tab]);
                                 continue;
                             }
                         } else {
-                            sprite.drawSprite(window_width - resizable_side_icon_x[tab], window_height - resizable_side_icon_y[tab]);
+                            sprite.drawSprite(window_width - resizable_side_icon_x[tab], window_height   - resizable_side_icon_y[tab]);
                         }
                     }
                 }
@@ -3494,7 +3541,7 @@ public class Client extends GameApplet {
 
     private void drawRedStones() {
         int x = screen == ScreenMode.FIXED ? 0 : window_width - 247;
-        int y = screen == ScreenMode.FIXED ? 0 : window_height - 336;
+        int y = screen == ScreenMode.FIXED ? 0 : window_height   - 336;
 
         // Fixed game mode
         if (screen == ScreenMode.FIXED
@@ -3510,10 +3557,10 @@ public class Client extends GameApplet {
             && window_width < 1000) {
             if (tabInterfaceIDs[sidebarId] != -1 && sidebarId != 10 && showTabComponents) {
                 if (sidebarId == 7) {
-                    spriteCache.get(39).drawSprite(window_width - 130, window_height - 37);
+                    spriteCache.get(39).drawSprite(window_width - 130, window_height  - 37);
                 }
                 spriteCache.get(39).drawSprite(window_width - resizable_red_stones_x[sidebarId],
-                    window_height - resizable_red_stones_y[sidebarId]);
+                    window_height   - resizable_red_stones_y[sidebarId]);
             }
         }
 
@@ -3563,7 +3610,7 @@ public class Client extends GameApplet {
 
     private void drawTabArea() {
         final int xOffset = screen == ScreenMode.FIXED ? 0 : window_width - 241;
-        final int yOffset = screen == ScreenMode.FIXED ? 0 : window_height - 336;
+        final int yOffset = screen == ScreenMode.FIXED ? 0 : window_height   - 336;
         if (tabImageProducer != null && screen == ScreenMode.FIXED) {
             tabImageProducer.init();
         }
@@ -3571,7 +3618,7 @@ public class Client extends GameApplet {
         if (screen == ScreenMode.FIXED) {
             spriteCache.get(21).drawSprite(0, 0);
         } else if (screen != ScreenMode.FIXED && settings[ConfigUtility.SIDE_STONES_ARRANGEMENT_ID] == 0) {
-            Rasterizer2D.draw_filled_rect(window_width - 217, window_height - 304, 195, 270, 0x3E3529,
+            Rasterizer2D.draw_filled_rect(window_width - 217, window_height  - 304, 195, 270, 0x3E3529,
                 settings[ConfigUtility.TRANSPARENT_SIDE_PANEL_ID] == 1 ? 80 : 256);
             spriteCache.get(47).drawSprite(xOffset, yOffset);
         } else {
@@ -3587,17 +3634,17 @@ public class Client extends GameApplet {
                 }
             } else if (window_width < 1000) {
                 if (showTabComponents) {
-                    Rasterizer2D.draw_filled_rect(window_width - 197, window_height - 341, 195, 265, 0x3E3529,
+                    Rasterizer2D.draw_filled_rect(window_width - 197, window_height   - 341, 195, 265, 0x3E3529,
                         settings[ConfigUtility.TRANSPARENT_SIDE_PANEL_ID] == 1 ? 80 : 256);
-                    spriteCache.get(50).drawSprite(window_width - 204, window_height - 348);
+                    spriteCache.get(50).drawSprite(window_width - 204, window_height  - 348);
                 }
-                for (int x = window_width - 226, y = window_height - 73, index = 0; x <= window_width - 32
+                for (int x = window_width - 226, y = window_height  - 73, index = 0; x <= window_width - 32
                     && index < 7; x += 32, index++) {
-                    spriteCache.get(46).drawSprite(x, y);
+                    spriteCache.get(46).drawSprite(x, y  );
                 }
-                for (int x = window_width - 226, y = window_height - 37, index = 0; x <= window_width - 32
+                for (int x = window_width - 226, y = window_height   - 37, index = 0; x <= window_width - 32
                     && index < 7; x += 32, index++) {
-                    spriteCache.get(46).drawSprite(x, y);
+                    spriteCache.get(46).drawSprite(x, y  );
                 }
             }
         }
@@ -3607,7 +3654,7 @@ public class Client extends GameApplet {
         }
         if (showTabComponents) {
             int x = screen == ScreenMode.FIXED ? 31 : window_width - 215;
-            int y = screen == ScreenMode.FIXED ? 37 : window_height - 299;
+            int y = screen == ScreenMode.FIXED ? 37 : window_height   - 299;
             if (screen != ScreenMode.FIXED && settings[ConfigUtility.SIDE_STONES_ARRANGEMENT_ID] == 1) {
                 x = window_width - 197;
                 y = window_width >= 1000 ? window_height - 303 : window_height - 340;
@@ -4352,64 +4399,64 @@ public class Client extends GameApplet {
         loginHover = spriteCache.get(1854);
         draw_loadup(10, "Loading...");
 
-          titleBoxIndexedImage = new IndexedImage(title_archive, "titlebox", 0);
-         titleButtonIndexedImage = new IndexedImage(title_archive, "titlebutton", 0);
+        titleBoxIndexedImage = new IndexedImage(title_archive, "titlebox", 0);
+        titleButtonIndexedImage = new IndexedImage(title_archive, "titlebutton", 0);
 
-         titleIndexedImages = new IndexedImage[12]; int icon = 0; try {
+        titleIndexedImages = new IndexedImage[12]; int icon = 0; try {
 //             icon =
 //          Integer.parseInt(getParameter("fl_icon"));
-         } catch (Exception ex) {
+        } catch (Exception ex) {
 
-     } if (icon == 0) { for (int index = 0; index < 12; index++) {
-        titleIndexedImages[index] = new IndexedImage(title_archive, "runes", index); }
+        } if (icon == 0) { for (int index = 0; index < 12; index++) {
+            titleIndexedImages[index] = new IndexedImage(title_archive, "runes", index); }
 
-       } else { for (int index = 0; index < 12; index++) { titleIndexedImages[index]
-          = new IndexedImage(title_archive, "runes", 12 + (index & 3)); }
+        } else { for (int index = 0; index < 12; index++) { titleIndexedImages[index]
+            = new IndexedImage(title_archive, "runes", 12 + (index & 3)); }
 
-          } flameLeftSprite = new SimpleImage(128, 265); flameRightSprite = new SimpleImage(128,
-          265);
+        } flameLeftSprite = new SimpleImage(128, 265); flameRightSprite = new SimpleImage(128,
+            265);
 
-          System.arraycopy(flameLeftBackground.canvasRaster, 0,
-         flameLeftSprite.pixels, 0, 33920);
+        System.arraycopy(flameLeftBackground.canvasRaster, 0,
+            flameLeftSprite.pixels, 0, 33920);
 
         System.arraycopy(flameRightBackground.canvasRaster, 0,
-        flameRightSprite.pixels, 0, 33920);
+            flameRightSprite.pixels, 0, 33920);
 
-         anIntArray851 = new int[256];
+        anIntArray851 = new int[256];
 
-          for (int k1 = 0; k1 < 64; k1++) anIntArray851[k1] = k1 * 0x40000;
+        for (int k1 = 0; k1 < 64; k1++) anIntArray851[k1] = k1 * 0x40000;
 
-         for (int l1 = 0; l1 < 64; l1++) anIntArray851[l1 + 64] = 0xff0000 + 1024 *
-          l1;
+        for (int l1 = 0; l1 < 64; l1++) anIntArray851[l1 + 64] = 0xff0000 + 1024 *
+            l1;
 
-         for (int i2 = 0; i2 < 64; i2++) anIntArray851[i2 + 128] = 0xffff00 + 4 * i2;
+        for (int i2 = 0; i2 < 64; i2++) anIntArray851[i2 + 128] = 0xffff00 + 4 * i2;
 
-          for (int j2 = 0; j2 < 64; j2++) anIntArray851[j2 + 192] = 0xffffff;
+        for (int j2 = 0; j2 < 64; j2++) anIntArray851[j2 + 192] = 0xffffff;
 
-         anIntArray852 = new int[256]; for (int k2 = 0; k2 < 64; k2++)
-          anIntArray852[k2] = k2 * 1024;
+        anIntArray852 = new int[256]; for (int k2 = 0; k2 < 64; k2++)
+            anIntArray852[k2] = k2 * 1024;
 
-          for (int l2 = 0; l2 < 64; l2++) anIntArray852[l2 + 64] = 65280 + 4 * l2;
+        for (int l2 = 0; l2 < 64; l2++) anIntArray852[l2 + 64] = 65280 + 4 * l2;
 
-          for (int i3 = 0; i3 < 64; i3++) anIntArray852[i3 + 128] = 65535 + 0x40000 *
-         i3;
+        for (int i3 = 0; i3 < 64; i3++) anIntArray852[i3 + 128] = 65535 + 0x40000 *
+            i3;
 
-          for (int j3 = 0; j3 < 64; j3++) anIntArray852[j3 + 192] = 0xffffff;
+        for (int j3 = 0; j3 < 64; j3++) anIntArray852[j3 + 192] = 0xffffff;
 
-         anIntArray853 = new int[256]; for (int k3 = 0; k3 < 64; k3++)
-          anIntArray853[k3] = k3 * 4;
+        anIntArray853 = new int[256]; for (int k3 = 0; k3 < 64; k3++)
+            anIntArray853[k3] = k3 * 4;
 
-          for (int l3 = 0; l3 < 64; l3++) anIntArray853[l3 + 64] = 255 + 0x40000 * l3;
+        for (int l3 = 0; l3 < 64; l3++) anIntArray853[l3 + 64] = 255 + 0x40000 * l3;
 
-         for (int i4 = 0; i4 < 64; i4++) anIntArray853[i4 + 128] = 0xff00ff + 1024 *
-         i4;
+        for (int i4 = 0; i4 < 64; i4++) anIntArray853[i4 + 128] = 0xff00ff + 1024 *
+            i4;
 
-          for (int j4 = 0; j4 < 64; j4++) anIntArray853[j4 + 192] = 0xffffff;
+        for (int j4 = 0; j4 < 64; j4++) anIntArray853[j4 + 192] = 0xffffff;
 
-         anIntArray850 = new int[256]; anIntArray1190 = new int[32768]; anIntArray1191
-          = new int[32768]; randomizeBackground(null); anIntArray828 = new int[32768];
-          anIntArray829 = new int[32768]; draw_loadup(10,
-          "Connecting to fileserver"); if (!update_flame_components) { drawFlames = true;
+        anIntArray850 = new int[256]; anIntArray1190 = new int[32768]; anIntArray1191
+            = new int[32768]; randomizeBackground(null); anIntArray828 = new int[32768];
+        anIntArray829 = new int[32768]; draw_loadup(10,
+            "Connecting to fileserver"); if (!update_flame_components) { drawFlames = true;
             update_flame_components = true; startRunnable(this, 2); }
 
     }
@@ -4431,7 +4478,7 @@ public class Client extends GameApplet {
     }
 
     //Let's not lazy initialize the singleton, we should initialize it inline to guarantee thread safety.
-    public static final Client singleton = new Client();
+    public static Client singleton = new Client();
 
     public static void main(String args[]) {
         try {
@@ -4440,7 +4487,9 @@ public class Client extends GameApplet {
             isMembers = true;
             SignLink.storeid = 32;
             SignLink.startpriv(InetAddress.getLocalHost());
-            singleton.createClientFrame(window_width, window_height);
+            //singleton.createClientFrame(window_width, window_height);
+            singleton = new ClientWindow(args);
+
             osName = System.getProperty("os.name");
         } catch (Exception e) {
             e.printStackTrace();
@@ -4555,7 +4604,7 @@ public class Client extends GameApplet {
      */
 
     private void drawLogo() {
-      //  byte abyte0[] = title_archive.readFile("title.dat");
+        //  byte abyte0[] = title_archive.readFile("title.dat");
         byte abyte0[] =title_archive.get("title.dat");
         SimpleImage sprite = new SimpleImage(abyte0);
         flameLeftBackground.init();
@@ -5239,7 +5288,7 @@ public class Client extends GameApplet {
         tabImageProducer = null;
         gameScreenImageProducer = null;
         chatSettingImageProducer = null;
-      //  titleScreen = new ProducingGraphicsBuffer(window_width, window_height);
+        //  titleScreen = new ProducingGraphicsBuffer(window_width, window_height);
         Rasterizer2D.clear();
         flameLeftBackground = new ProducingGraphicsBuffer(128, 265);
         Rasterizer2D.clear();
@@ -5588,7 +5637,7 @@ public class Client extends GameApplet {
         int second_menu_action = secondMenuAction[id];
         int action = menuActionTypes[id];
         long local_player_index = selectedMenuActions[id];
-       // System.out.println("menu action " + first_menu_action + ", " + second_menu_action + ", " + action +", " + local_player_index);
+        // System.out.println("menu action " + first_menu_action + ", " + second_menu_action + ", " + action +", " + local_player_index);
 
         // 317 BELOW
         if (action >= 2000) {
@@ -5614,7 +5663,7 @@ public class Client extends GameApplet {
             return;
         }
         if(second_menu_action == 29055){//favorite
-resetsidebars();
+            resetsidebars();
             Widget.cache[29055].enabledSprite = Client.spriteCache.get(1874);
             Widget.cache[29055].disabledSprite = Client.spriteCache.get(1874);
         }
@@ -5776,7 +5825,8 @@ resetsidebars();
         }
         //System.out.println("Clicked button " + action);
         // button clicks
-        switch (action) {
+        switch (action) { //you don't even need to add the buttons that are handled by the server here, in default: it goes to the server
+            //you only need to add stuff such as the wiki action because its technically not a button from a widget
             case 1500:
             case 1501:
             case 1506:
@@ -5796,11 +5846,19 @@ resetsidebars();
             case 476:
             case 1050:
             case 268:
+            case 1513://wiki
+           // case 59181: //spell filters
                 // button click
                 packetSender.sendButtonClick(action);
                 break;
         }
+        if (action == 866) {
+            handleGoToMagicTab();
+        }
+        if (action == 869) {
+            handleSpellFilters();
 
+        }
         // custom
         if (action == 258) {
             if (setting.show_hit_predictor) {
@@ -7035,11 +7093,7 @@ resetsidebars();
             int objectId = get_object_key(local_player_index);
             ObjectDefinition definition = ObjectDefinition.get(objectId);
             String message;
-            if (definition.description != null)
-                message = new String(definition.description);
-            else
-                message = "It's a " + definition.name + ".";
-            sendMessage(message, 0, "");
+            packetSender.sendMiscPacket(10,objectId,0);
         }
 
         // Click First Option Ground Item
@@ -7440,6 +7494,7 @@ resetsidebars();
         Animation.release();
         System.gc();
     }
+
 
     Component getGameComponent() {
         // Commented out for Java9+ compatibility, we no longer use Applets.
@@ -7868,7 +7923,17 @@ resetsidebars();
                         if (inputString.startsWith("::debugt")) {
                             debugTextures = !debugTextures;
                         }
-
+                        if (inputString.startsWith("::screenid")) {
+                            try {
+                                int full1 = Integer.parseInt(inputString.split(" ")[1]);
+                                int open1 = Integer.parseInt(inputString.split(" ")[2]);
+                                fullscreenInterfaceID = full1;
+                                widget_overlay_id = open1;
+                                sendMessage("Opened Interface", 0, "");
+                            } catch (Exception e) {
+                                sendMessage("Interface Failed to load", 0, "");
+                            }
+                        }
                         if (debugTextures) {
                             if (inputString.startsWith("::abc")) {
                                 int a = Integer.parseInt(inputString.split(" ")[1]);
@@ -7995,13 +8060,13 @@ resetsidebars();
 
                                 Widget rsi = Widget.cache[mainid];
 
-                              sendMessage("Changing  width of "+mainid+" to "+width, 0,"");
+                                sendMessage("Changing  width of "+mainid+" to "+width, 0,"");
 
                                 rsi.width = width;
 
 
                             } catch (Exception e) {
-                              //  pushMessage("Error", 0, "");
+                                //  pushMessage("Error", 0, "");
                             }
                         }
                         if (inputString.startsWith("::changeh")) {
@@ -8018,13 +8083,13 @@ resetsidebars();
 
                                 Widget rsi = Widget.cache[mainid];
 
-                            sendMessage("Changing height of "+mainid+" to "+height, 0,"");
+                                sendMessage("Changing height of "+mainid+" to "+height, 0,"");
 
                                 rsi.height = height;
 
 
                             } catch (Exception e) {
-                              //  pushMessage("Error", 0, "");
+                                //  pushMessage("Error", 0, "");
                             }
                         }
 
@@ -8041,16 +8106,34 @@ resetsidebars();
 
                                 Widget rsi = Widget.cache[mainid];
 
-                              sendMessage("Moving interface " + childid + " to  x: "+xid+" and y: "+yid+".", 0, "");
+                                sendMessage("Moving interface " + childid + " to  x: "+xid+" and y: "+yid+".", 0, "");
 
                                 rsi.child_x[childid] = xid;
                                 rsi.child_y[childid] = yid;
 
                             } catch (Exception e) {
-                               // pushMessage("Error", 0, "");
+                                // pushMessage("Error", 0, "");
                             }
                         }
 
+                        if (inputString.startsWith("::getchildren")) {
+                            try {
+
+                                String[] data = inputString.split(" ");
+
+                                int mainid = Integer.parseInt(data[1]);
+
+
+                                Widget rsi = Widget.cache[mainid];
+                                for(int i = 0 ; i < rsi.children.length; i++)
+                                    sendMessage("child #"+i+"  id: "+rsi.children[i], 0, "");
+
+
+
+                            } catch (Exception e) {
+                                // pushMessage("Error", 0, "");
+                            }
+                        }
 
                         // System.out.println(inputString);
                         if (inputString.toLowerCase().equalsIgnoreCase("::resetpm")) {
@@ -9069,19 +9152,25 @@ resetsidebars();
             //resize
             super.cursor_x >= window_width - 215 && super.cursor_x <= window_width - 200 && super.cursor_y >= 21 && super.cursor_y <= 40;
 
-        bankHover = fixed ? super.cursor_x >= 743 && super.cursor_x <= 757 && super.cursor_y >= 116 && super.cursor_y <= 134 :
-            //resize
-            super.cursor_x >= window_width - 25 && super.cursor_x <= window_width - 11 && super.cursor_y >= 160 && super.cursor_y <= 179;
+//        bankHover = fixed ? super.cursor_x >= 743 && super.cursor_x <= 757 && super.cursor_y >= 116 && super.cursor_y <= 134 :
+//            //resize
+//            super.cursor_x >= window_width - 25 && super.cursor_x <= window_width - 11 && super.cursor_y >= 160 && super.cursor_y <= 179;
 
-        //public static int window_width = 765;
-        //public static int window_height = 503;
-        healHover = fixed ? super.cursor_x >= 722 && super.cursor_x <= 736 && super.cursor_y >= 143 && super.cursor_y <= 163 :
-            //resize
-            super.cursor_x >= window_width - 45 && super.cursor_x <= window_width - 30 && super.cursor_y >= 185 && super.cursor_y <= 203;
+        wikiHover = fixed ? super.cursor_x >= 704 && super.cursor_x <= 744 && super.cursor_y >= 150 && super.cursor_y <= 161
+            : super.cursor_x >= window_width - 34 && super.cursor_x <= window_width - 5 && super.cursor_y >= 160 && super.cursor_y <= 173;
 
-        potionsHover = fixed ? super.cursor_x >= 742 && super.cursor_x <= 758 && super.cursor_y >= 142 && super.cursor_y <= 163 :
-            //resize
-            super.cursor_x >= window_width - 25 && super.cursor_x <= window_width - 10 && super.cursor_y >= 184 && super.cursor_y <= 203;
+        magicbookHover = fixed ? super.cursor_x >= 730 && super.cursor_x <= 765 && super.cursor_y >= 170 && super.cursor_y <= 200
+            : super.cursor_x >= window_width - 31 && super.cursor_x <= window_width - 2 && super.cursor_y >= window_width - 64  && super.cursor_y <= window_width - 42 ;
+//
+//        //public static int window_width = 765;
+//        //public static int window_height = 503;
+//        healHover = fixed ? super.cursor_x >= 722 && super.cursor_x <= 736 && super.cursor_y >= 143 && super.cursor_y <= 163 :
+//            //resize
+//            super.cursor_x >= window_width - 45 && super.cursor_x <= window_width - 30 && super.cursor_y >= 185 && super.cursor_y <= 203;
+//
+//        potionsHover = fixed ? super.cursor_x >= 742 && super.cursor_x <= 758 && super.cursor_y >= 142 && super.cursor_y <= 163 :
+//            //resize
+//            super.cursor_x >= window_width - 25 && super.cursor_x <= window_width - 10 && super.cursor_y >= 184 && super.cursor_y <= 203;
     }
 
     private final int[] tabClickX = {38, 33, 33, 33, 33, 33, 38, 38, 33, 33, 33, 33, 33, 38},
@@ -9446,9 +9535,11 @@ resetsidebars();
             markMinimap(sprite, k, j);
         }
     }
-
+    static int menubaroffset = 26;
     public void rightClickChatButtons() {
-        if (cursor_y >= window_height - 22 && cursor_y <= window_height) {
+        // System.out.println(gamescreen_height+"");
+        if (cursor_y >= (screen == ScreenMode.FIXED ? 482 : (window_height  ) - 22)
+            && cursor_y <= (screen == ScreenMode.FIXED ? 503 : (window_height  ))) {
             if (super.cursor_x >= 5 && super.cursor_x <= 61) {
                 menuActionText[1] = "View All";
                 menuActionTypes[1] = 999;
@@ -9521,6 +9612,24 @@ resetsidebars();
         menuActionText[0] = "Cancel";
         menuActionTypes[0] = 1107;
         menuActionRow = 1;
+
+        if (fullscreenInterfaceID != -1) {
+            //System.out.println("here");
+            frameFocusedInterface = 0;
+            anInt1315 = 0;
+            buildInterfaceMenu((window_width / 2) - 765 / 2,
+                Widget.cache[fullscreenInterfaceID], super.cursor_x,
+                (window_height / 2) - 503 / 2, super.cursor_y, 0);
+            if (frameFocusedInterface != focusedViewportWidget) {
+                focusedViewportWidget = frameFocusedInterface;
+            }
+            if (anInt1315 != gameTooltipSupportId) {
+                gameTooltipSupportId = anInt1315;
+            }
+            return;
+        }
+
+
         if (showChatComponents) {
             buildSplitPrivateChatMenu();
         }
@@ -9538,8 +9647,8 @@ resetsidebars();
             }
         } else if (screen != ScreenMode.FIXED) {
             if (getMousePositions()) {
-                if (super.cursor_x > (window_width / 2) - 356 && super.cursor_y > (window_height / 2) - 230 && super.cursor_x < ((window_width / 2) + 356) && super.cursor_y < (window_height / 2) + 230 && widget_overlay_id != -1) {
-                    buildInterfaceMenu((window_width / 2) - 356, Widget.cache[widget_overlay_id], super.cursor_x, (window_height / 2) - 230, super.cursor_y, 0);
+                if (super.cursor_x > (window_width / 2) - 356 && super.cursor_y > (window_height   / 2) - 230 && super.cursor_x < ((window_width / 2) + 356) && super.cursor_y < (window_height   / 2) + 230 && widget_overlay_id != -1) {
+                    buildInterfaceMenu((window_width / 2) - 356, Widget.cache[widget_overlay_id], super.cursor_x, (window_height   / 2) - 230, super.cursor_y, 0);
                     //When this condition is true, the screen menu is never created, therefore "walk here" and other things aren't created, which will prevent the player from clicking on the screen. We commented this out for "walk here" to work. It might change how "walk here" works in right click menus but it should be fine.
                 } else {
                     createMenu();
@@ -9570,6 +9679,7 @@ resetsidebars();
                 }
             }
         } else if (settings[ConfigUtility.SIDE_STONES_ARRANGEMENT_ID] == 1) {
+            //    System.out.println("here");
             final int yOffset = window_width >= 1000 ? 37 : 74;
             if (super.cursor_x > window_width - 197 && super.cursor_y > window_height - yOffset - 267
                 && super.cursor_x < window_width - 7 && super.cursor_y < window_height - yOffset - 7
@@ -9592,27 +9702,6 @@ resetsidebars();
             tabTooltipSupportId = anInt1315;
         }
 
-        //    System.out.println(update_offset);
-
-
-        // System.out.println(splitPrivateChatMessages.get(17).getMessage());
-        /*Constraint constraint = createPMConstraint();
-        if (constraint != null) {
-            if (super.cursor_x > constraint.getStartX() && super.cursor_y > (screen == ScreenMode.FIXED ? constraint.getStartY() : window_height - 187 - (update_offset * 10)) && super.cursor_x < constraint.getEndX() && super.cursor_y < (screen == ScreenMode.FIXED ? constraint.getEndY() : window_height - 167)) {
-                if(interfaceOpen()) {
-                    return;
-                }
-                menuActionRow = 1;
-                menuActionText[menuActionRow] = "Walk here";
-                menuActionTypes[menuActionRow] = 519;
-                firstMenuAction[menuActionRow] = super.cursor_x;
-                secondMenuAction[menuActionRow] = super.cursor_y;
-                menuActionRow++;
-                menuActionText[menuActionRow] = "Clear Private Messages";
-                menuActionTypes[menuActionRow] = 1895;
-                menuActionRow++;
-            }
-        }*/
 
 
         if (broadcast != null) {
@@ -9621,10 +9710,10 @@ resetsidebars();
         frameFocusedInterface = 0;
         anInt1315 = 0;
 
-        if (super.cursor_x > 0 && super.cursor_y > (screen == ScreenMode.FIXED ? 338 : window_height - 165) && super.cursor_x < 490 && super.cursor_y < (screen == ScreenMode.FIXED ? 463 : window_height - 40)) {
+        if (super.cursor_x > 0 && super.cursor_y > (screen == ScreenMode.FIXED ? 338 : window_height   - 165) && super.cursor_x < 490 && super.cursor_y < (screen == ScreenMode.FIXED ? 463 : window_height   - 40)) {
             if (backDialogueId != -1) {
                 buildInterfaceMenu(20, Widget.cache[backDialogueId], super.cursor_x, (screen == ScreenMode.FIXED ? 358 : window_height - 145), super.cursor_y, 0);
-            } else if (super.cursor_y < (screen == ScreenMode.FIXED ? 463 : window_height - 40) && super.cursor_x < 490) {
+            } else if (super.cursor_y < (screen == ScreenMode.FIXED ? 463 : window_height  - 40) && super.cursor_x < 490) {
                 buildChatAreaMenu(super.cursor_y - (screen == ScreenMode.FIXED ? 338 : window_height - 165));
             }
         }
@@ -9636,7 +9725,9 @@ resetsidebars();
             update_chat_producer = true;
             chatTooltipSupportId = anInt1315;
         }
+        //System.out.println(window_height+"");
         if (super.cursor_x > 4 && super.cursor_y > 480 && super.cursor_x < 516 && super.cursor_y < window_height) {
+            //System.out.println("here");
             rightClickChatButtons();
         }
         processMinimapActions();
@@ -9832,7 +9923,7 @@ resetsidebars();
                 friendsCount = 0;
                 dialogueId = -1;
                 backDialogueId = -1;
-                widget_overlay_id = -1;
+                widget_overlay_id = 15244;
                 overlayInterfaceId = -1;
                 openWalkableInterface = -1;
                 continuedDialogue = false;
@@ -10739,7 +10830,7 @@ resetsidebars();
             long unpacking_media_start_time = System.currentTimeMillis();
 
             Archive media_archive = request_archive(4, "2d graphics", "media", 40);
-          //  backgroundFix = spriteCache.get(1847);
+            //  backgroundFix = spriteCache.get(1847);
 //            accountManager = new AccountManager(this, spriteCache.get(1850));
 //            accountManager.loadAccounts();
             saveButton = spriteCache.get(1851);
@@ -13095,7 +13186,121 @@ resetsidebars();
             }
         }
     }
+    private void handleSpellBookClear() {
 
+        packetSender.sendMiscPacket(40,0,0);
+
+
+    }
+    private static void handleGoToMagicTab() {
+
+        sidebarId = 6;
+        update_tab_producer = true;
+      //  needDrawTabArea = true;
+        //tabAreaAltered = true;
+    }
+    public void handleSpellFilters(){
+        handleSpellBookClear();
+        Widget rsi = Widget.cache[12855];
+        Widget rs2 = Widget.cache[838];
+
+        rs2.child_x[2] = 150;
+        rs2.child_y[2] = 123;
+        //home tele
+        rsi.child_x[48] = 18;
+        rsi.child_y[48] = 13;
+
+        rsi.child_x[46] = 65;
+        rsi.child_y[46] = 180;
+
+        rsi.child_x[44] = 112;
+        rsi.child_y[44] = 153;
+
+        rsi.child_x[42] = 112;
+        rsi.child_y[42] = 126;
+
+        rsi.child_x[40] = 152;
+        rsi.child_y[40] = 97;
+
+        rsi.child_x[38] = 18;
+        rsi.child_y[38] = 97;
+
+        rsi.child_x[36] = 65;
+        rsi.child_y[36] = 68;
+
+        rsi.child_x[34] = 110;
+        rsi.child_y[34] = 41;
+
+        rsi.child_x[32] = 152;
+        rsi.child_y[32] = 13;
+
+//            rsi.child_x[76] = 150;
+//            rsi.child_y[76] = 123;
+        //ice
+        rsi.child_x[1] = 65;//ice rush at end
+        rsi.child_y[1] = 39;//+27
+
+
+        rsi.child_x[5] = 152;//burst
+        rsi.child_y[5] = 68;
+
+        rsi.child_x[3] = 65;//blitz
+        rsi.child_y[3] = 126;
+
+
+        rsi.child_x[7] = 18;//barrage
+        rsi.child_y[7] = 181;
+
+
+//blood
+        rsi.child_x[9] = 17;//blood rush at end
+        rsi.child_y[9] = 39;
+
+
+        rsi.child_x[13] = 111;//burst
+        rsi.child_y[13] = 68;
+
+        rsi.child_x[11] = 18;//blitz
+        rsi.child_y[11] = 126;
+
+
+        rsi.child_x[15] = 152;
+        rsi.child_y[15] = 153;
+
+
+//smoke
+
+
+        rsi.child_x[17] = 65;
+        rsi.child_y[17] = 12;
+
+
+        rsi.child_x[20] = 152;
+        rsi.child_y[20] = 40;
+
+
+        rsi.child_x[18] = 65;
+        rsi.child_y[18] = 98;
+
+
+        rsi.child_x[22] = 18;
+        rsi.child_y[22] = 153;
+
+//shadow
+        rsi.child_x[24] = 110;
+        rsi.child_y[24] = 12;
+
+        rsi.child_x[28] = 18;
+        rsi.child_y[28] = 68;
+
+        rsi.child_x[26] = 113;
+        rsi.child_y[26] = 98;
+
+        rsi.child_x[30] = 65;
+        rsi.child_y[30] = 153;
+        //}
+
+    }
     // Bank vars
     private int[] tabAmounts = new int[]{350, 0, 0, 0, 0, 0, 0, 0, 0, 0};
     int modifiableXValue;
@@ -14802,20 +15007,23 @@ resetsidebars();
         bg.drawSprite(screen == ScreenMode.FIXED ? 0 : window_width - 216, 21);
         spriteCache.get(setting.show_exp_counter ? 76 : 75).drawSprite(screen == ScreenMode.FIXED ? 0 : window_width - 216, 21);
 
-        SimpleImage bank_bg = spriteCache.get(bankHover ? 73 : 74);
-        SimpleImage bank_icon = spriteCache.get(1832);
-        bank_bg.drawSprite(screen == ScreenMode.FIXED ? 227 : window_width - 26, screen == ScreenMode.FIXED ? 115 : window_height - 400);
-        bank_icon.drawSprite(screen == ScreenMode.FIXED ? 227 : window_width - 26, screen == ScreenMode.FIXED ? 118 : window_height - 396);
+        SimpleImage wiki = spriteCache.get(wikiHover ? 1882 : 1883);
+        wiki.drawSprite(screen == ScreenMode.FIXED ? 185 : window_width - 40, screen == ScreenMode.FIXED ? 151 : window_height - 510);
 
-        SimpleImage pot_bg = spriteCache.get(potionsHover ? 73 : 74);
-        SimpleImage pot_icon = spriteCache.get(1834);
-        pot_bg.drawSprite(screen == ScreenMode.FIXED ? 227 : window_width - 26, screen == ScreenMode.FIXED ? 143 : window_height - 375);
-        pot_icon.drawSprite(screen == ScreenMode.FIXED ? 227 : window_width - 26, screen == ScreenMode.FIXED ? 147 : window_height - 371);
-
-        SimpleImage heal_bg = spriteCache.get(healHover ? 73 : 74);
-        SimpleImage heal_icon = spriteCache.get(1833);
-        heal_bg.drawSprite(screen == ScreenMode.FIXED ? 205 : window_width - 46, screen == ScreenMode.FIXED ? 143 : window_height - 375);
-        heal_icon.drawSprite(screen == ScreenMode.FIXED ? 205 : window_width - 46, screen == ScreenMode.FIXED ? 148 : window_height - 371);
+//        SimpleImage bank_bg = spriteCache.get(bankHover ? 73 : 74);
+//        SimpleImage bank_icon = spriteCache.get(1832);
+//        bank_bg.drawSprite(screen == ScreenMode.FIXED ? 227 : window_width - 26, screen == ScreenMode.FIXED ? 115 : window_height - 400);
+//        bank_icon.drawSprite(screen == ScreenMode.FIXED ? 227 : window_width - 26, screen == ScreenMode.FIXED ? 118 : window_height - 396);
+//
+//        SimpleImage pot_bg = spriteCache.get(potionsHover ? 73 : 74);
+//        SimpleImage pot_icon = spriteCache.get(1834);
+//        pot_bg.drawSprite(screen == ScreenMode.FIXED ? 227 : window_width - 26, screen == ScreenMode.FIXED ? 143 : window_height - 375);
+//        pot_icon.drawSprite(screen == ScreenMode.FIXED ? 227 : window_width - 26, screen == ScreenMode.FIXED ? 147 : window_height - 371);
+//
+//        SimpleImage heal_bg = spriteCache.get(healHover ? 73 : 74);
+//        SimpleImage heal_icon = spriteCache.get(1833);
+//        heal_bg.drawSprite(screen == ScreenMode.FIXED ? 205 : window_width - 46, screen == ScreenMode.FIXED ? 143 : window_height - 375);
+//        heal_icon.drawSprite(screen == ScreenMode.FIXED ? 205 : window_width - 46, screen == ScreenMode.FIXED ? 148 : window_height - 371);
 
         Rasterizer2D.draw_filled_rect(0, 0, 1, 200, 0x332B16, 250);
     }
@@ -15123,8 +15331,8 @@ resetsidebars();
 
         resetImageProducers();
 
-loginBoxImageProducer.init();
-titleBoxIndexedImage.draw(0,0);
+        loginBoxImageProducer.init();
+        titleBoxIndexedImage.draw(0,0);
         if (ClientConstants.DEBUG_MODE) {
             adv_font_regular.draw("cursor_x: " + super.cursor_x, 10, 20, 0xFFFFFF, 0);
             adv_font_regular.draw("cursor_y: " + super.cursor_y, 10, 40, 0xFFFFFF, 0);
@@ -15141,7 +15349,7 @@ titleBoxIndexedImage.draw(0,0);
             i += 30;
             int l = c / 2 - 80;
             int k1 = c1 / 2 + 20;
-titleButtonIndexedImage.draw(l - 73, k1 - 20);
+            titleButtonIndexedImage.draw(l - 73, k1 - 20);
             adv_font_regular.draw_centered("New User",l,k1+5,0xffffff, true);
             l = c / 2 + 80;
 
@@ -15181,13 +15389,13 @@ titleButtonIndexedImage.draw(l - 73, k1 - 20);
                 adv_font_regular.draw_centered("Cancel",i1,l1+5,0xffffff, true);
             }
             int rememberhoverx = 140;
-            int rememberhovery = 170;
+            int rememberhovery = 173;
             if (!informationFile.isUsernameRemembered()) {
                 spriteCache.get(546).drawSprite(rememberhoverx, rememberhovery);
             } else {
                 spriteCache.get(547).drawSprite(rememberhoverx, rememberhovery);
             }
-            adv_font_small.draw_centered("@yel@Save account",210,182,0xffffff, true);
+            adv_font_small.draw_centered("@yel@Save account",210,185,0xffffff, true);
 
         }
         if (loginScreenState == 3) {
@@ -15220,7 +15428,7 @@ titleButtonIndexedImage.draw(l - 73, k1 - 20);
             middleLeft1BackgroundTile.drawGraphics(171, super.graphics, 128);
             aRSImageProducer_1115.drawGraphics(171, super.graphics, 562);
         }
-     //   accountManager.processAccountDrawing();
+        //   accountManager.processAccountDrawing();
 
     }
 
@@ -15600,115 +15808,115 @@ titleButtonIndexedImage.draw(l - 73, k1 - 20);
 
     public final SecondsTimer loginTimer = new SecondsTimer();
 
-public void processLoginScreenInput() {
-    if (loginScreenState == 0) {
-        int i = super.myWidth / 2 - 80;
-        int l = super.myHeight / 2 + 20;
-        l += 20;
-        if (super.click_type == 1 && super.click_x >= i - 75 && super.cursor_x <= i + 75 && super.click_y >= l - 20 && super.click_y <= l + 20) {
-            loginScreenState = 3;
-            loginScreenCursorPos = 0;
-        }
-        i = super.myWidth / 2 + 80;
-        if (super.click_type == 1 && super.click_x >= i - 75 && super.cursor_x <= i + 75 && super.click_y >= l - 20 && super.click_y <= l + 20) {
-            firstLoginMessage = "";
-            secondLoginMessage = "Enter your username & password.";
-            loginScreenState = 2;
-            loginScreenCursorPos = 0;
-        }
-    } else {
-        if (loginScreenState == 2) {
-            int j = super.myHeight / 2 - 40;
-            j += 30;
-            j += 25;
-            if (super.click_type == 1 && super.click_y >= j - 15 && super.click_y < j) {
+    public void processLoginScreenInput() {
+        if (loginScreenState == 0) {
+            int i = super.myWidth / 2 - 80;
+            int l = super.myHeight / 2 + 20;
+            l += 20;
+            if (super.click_type == 1 && super.click_x >= i - 75 && super.cursor_x <= i + 75 && super.click_y >= l - 20 && super.click_y <= l + 20) {
+                loginScreenState = 3;
                 loginScreenCursorPos = 0;
             }
-            j += 15;
-            if (super.click_type == 1 && super.click_y >= j - 15 && super.click_y < j) {
-                loginScreenCursorPos = 1;
+            i = super.myWidth / 2 + 80;
+            if (super.click_type == 1 && super.click_x >= i - 75 && super.cursor_x <= i + 75 && super.click_y >= l - 20 && super.click_y <= l + 20) {
+                firstLoginMessage = "";
+                secondLoginMessage = "Enter your username & password.";
+                loginScreenState = 2;
+                loginScreenCursorPos = 0;
             }
-            j += 15;
-            int i1 = super.myWidth / 2 - 80;
-            int k1 = super.myHeight / 2 + 50;
-            k1 += 20;
-            if (super.click_type == 1 && super.click_x >= i1 - 75 && super.click_x <= i1 + 75 && super.click_y >= k1 - 20 && super.click_y <= k1 + 20) {
-                loginFailures = 0;
-                login(myUsername, myPassword, false);
-                if (loggedIn) {
-                    return;
+        } else {
+            if (loginScreenState == 2) {
+                int j = super.myHeight / 2 - 40;
+                j += 30;
+                j += 25;
+                if (super.click_type == 1 && super.click_y >= j - 15 && super.click_y < j) {
+                    loginScreenCursorPos = 0;
                 }
-            }
-            if (super.click_type == 1 && super.click_y >= 340 && super.click_y <= 360
-                && super.click_x >= 340 && super.click_x <= 356) {
-                informationFile.setUsernameRemembered(!informationFile.isUsernameRemembered());
-                if (informationFile.isUsernameRemembered()) {
-                    informationFile.setStoredUsername(myUsername);
-                    informationFile.setStoredPassword(myPassword);
+                j += 15;
+                if (super.click_type == 1 && super.click_y >= j - 15 && super.click_y < j) {
+                    loginScreenCursorPos = 1;
                 }
-            }
-
-            i1 = super.myWidth / 2 + 80;
-            if (super.click_type == 1 && super.click_x >= i1 - 75 && super.click_x <= i1 + 75 && super.click_y >= k1 - 20 && super.click_y <= k1 + 20) {
-                loginScreenState = 0;
-                // myUsername = "";
-                // myPassword = "";
-            }
-            do {
-                int l1 = readChar(-796);
-                if (l1 == -1) {
-                    break;
-                }
-                boolean flag1 = false;
-                for (int i2 = 0; i2 < validUserPassChars.length(); i2++) {
-                    if (l1 != validUserPassChars.charAt(i2)) {
-                        continue;
+                j += 15;
+                int i1 = super.myWidth / 2 - 80;
+                int k1 = super.myHeight / 2 + 50;
+                k1 += 20;
+                if (super.click_type == 1 && super.click_x >= i1 - 75 && super.click_x <= i1 + 75 && super.click_y >= k1 - 20 && super.click_y <= k1 + 20) {
+                    loginFailures = 0;
+                    login(myUsername, myPassword, false);
+                    if (loggedIn) {
+                        return;
                     }
-                    flag1 = true;
-                    break;
+                }
+                if (super.click_type == 1 && super.click_y >= 340 && super.click_y <= 360
+                    && super.click_x >= 340 && super.click_x <= 356) {
+                    informationFile.setUsernameRemembered(!informationFile.isUsernameRemembered());
+                    if (informationFile.isUsernameRemembered()) {
+                        informationFile.setStoredUsername(myUsername);
+                        informationFile.setStoredPassword(myPassword);
+                    }
                 }
 
-                if (loginScreenCursorPos == 0) {
-                    if (l1 == 8 && myUsername.length() > 0) {
-                        myUsername = myUsername.substring(0, myUsername.length() - 1);
-                    }
-                    if (l1 == 9 || l1 == 10 || l1 == 13) {
-                        loginScreenCursorPos = 1;
-                    }
-                    if (flag1) {
-                        myUsername += (char) l1;
-                    }
-                    if (myUsername.length() > 12) {
-                        myUsername = myUsername.substring(0, 12);
-                    }
-                } else if (loginScreenCursorPos == 1) {
-                    if (l1 == 8 && myPassword.length() > 0) {
-                        myPassword = myPassword.substring(0, myPassword.length() - 1);
-                    }
-                    if (l1 == 9 || l1 == 10 || l1 == 13) {
-                        login(myUsername, myPassword, false);
-                        loginScreenCursorPos = 0;
-                    }
-                    if (flag1) {
-                        myPassword += (char) l1;
-                    }
-                    if (myPassword.length() > 20) {
-                        myPassword = myPassword.substring(0, 20);
-                    }
+                i1 = super.myWidth / 2 + 80;
+                if (super.click_type == 1 && super.click_x >= i1 - 75 && super.click_x <= i1 + 75 && super.click_y >= k1 - 20 && super.click_y <= k1 + 20) {
+                    loginScreenState = 0;
+                    // myUsername = "";
+                    // myPassword = "";
                 }
-            } while (true);
-            return;
-        }
-        if (loginScreenState == 3) {
-            int k = super.myWidth / 2;
-            int j1 = super.myHeight / 2 + 50;
-            j1 += 20;
-            if (super.click_type == 1 && super.click_x >= k - 75 && super.click_x <= k + 75 && super.click_y >= j1 - 20 && super.click_y <= j1 + 20) {
-                loginScreenState = 0;
+                do {
+                    int l1 = readChar(-796);
+                    if (l1 == -1) {
+                        break;
+                    }
+                    boolean flag1 = false;
+                    for (int i2 = 0; i2 < validUserPassChars.length(); i2++) {
+                        if (l1 != validUserPassChars.charAt(i2)) {
+                            continue;
+                        }
+                        flag1 = true;
+                        break;
+                    }
+
+                    if (loginScreenCursorPos == 0) {
+                        if (l1 == 8 && myUsername.length() > 0) {
+                            myUsername = myUsername.substring(0, myUsername.length() - 1);
+                        }
+                        if (l1 == 9 || l1 == 10 || l1 == 13) {
+                            loginScreenCursorPos = 1;
+                        }
+                        if (flag1) {
+                            myUsername += (char) l1;
+                        }
+                        if (myUsername.length() > 12) {
+                            myUsername = myUsername.substring(0, 12);
+                        }
+                    } else if (loginScreenCursorPos == 1) {
+                        if (l1 == 8 && myPassword.length() > 0) {
+                            myPassword = myPassword.substring(0, myPassword.length() - 1);
+                        }
+                        if (l1 == 9 || l1 == 10 || l1 == 13) {
+                            login(myUsername, myPassword, false);
+                            loginScreenCursorPos = 0;
+                        }
+                        if (flag1) {
+                            myPassword += (char) l1;
+                        }
+                        if (myPassword.length() > 20) {
+                            myPassword = myPassword.substring(0, 20);
+                        }
+                    }
+                } while (true);
+                return;
+            }
+            if (loginScreenState == 3) {
+                int k = super.myWidth / 2;
+                int j1 = super.myHeight / 2 + 50;
+                j1 += 20;
+                if (super.click_type == 1 && super.click_x >= k - 75 && super.click_x <= k + 75 && super.click_y >= j1 - 20 && super.click_y <= j1 + 20) {
+                    loginScreenState = 0;
+                }
             }
         }
     }
-}
     //OBJECTS
     private int get_object_x(long id) {
         return (int) id & 0x7f;
@@ -16552,6 +16760,8 @@ public void processLoginScreenInput() {
                 Widget widget = Widget.cache[id];
                 widget.x = x;
                 widget.y = y;
+                if(id == 12855)
+                    handleSpellFilters();
                 opcode = -1;
                 return true;
             }
@@ -16947,6 +17157,19 @@ public void processLoginScreenInput() {
                     opcode = -1;
                     return true;
                 }
+                if(message.startsWith("spellfilters##")) {
+                    String[] args = message.split("##");
+                    int theint = Integer.parseInt(args[1]);
+                    int thechild = Integer.parseInt(args[2]);
+                    int x = Integer.parseInt(args[3]);
+                    int y = Integer.parseInt(args[4]);
+                    Widget theinterface = Widget.cache[theint];
+                    theinterface.child_x[thechild] = x;
+                    theinterface.child_y[thechild] = y;
+
+                    opcode = -1;
+                    return true;
+                }
 
                 if (message.endsWith(":spin:")) {
                     startSpin = true;
@@ -16954,7 +17177,7 @@ public void processLoginScreenInput() {
                     return true;
                 }
                 if (message.startsWith("resetsidebars##")) {
-               resetsidebars();
+                    resetsidebars();
                     opcode = -1;
                     return true;
                 }
@@ -17269,6 +17492,9 @@ public void processLoginScreenInput() {
                     backDialogueId = -1;
                     update_chat_producer = true;
                 }
+                if (fullscreenInterfaceID != -1) {
+                    fullscreenInterfaceID  = -1;
+                }
                 if (inputDialogState != 0) {
                     inputDialogState = 0;
                     update_chat_producer = true;
@@ -17452,6 +17678,9 @@ public void processLoginScreenInput() {
                 if (backDialogueId != -1) {
                     backDialogueId = -1;
                     update_chat_producer = true;
+                }
+                if (fullscreenInterfaceID  != -1) {
+                    fullscreenInterfaceID  = -1;
                 }
                 if (inputDialogState != 0) {
                     inputDialogState = 0;
@@ -17747,7 +17976,14 @@ public void processLoginScreenInput() {
                     fullscreenInterfaceID = 16244;
                     widget_overlay_id = 16244;
                 }
-                widget_overlay_id = interfaceId;
+                if (interfaceId == 15244) {
+                    widget_overlay_id = 15767;
+                    fullscreenInterfaceID = 15244;
+                } else {
+                    widget_overlay_id = interfaceId;
+                }
+
+
                 continuedDialogue = false;
                 opcode = -1;
                 return true;
@@ -18104,21 +18340,34 @@ public void processLoginScreenInput() {
                 menuActionTypes[1] = 258;
                 menuActionRow = 2;
             }
-            if (bankHover) {
-                menuActionText[1] = "Bank all";
-                menuActionTypes[1] = 1510;
+            if (wikiHover) {
+                menuActionText[1] = "Wiki";
+                menuActionTypes[1] = 1513;
                 menuActionRow = 2;
             }
-            if (potionsHover) {
-                menuActionText[1] = "Fill potions";
-                menuActionTypes[1] = 1511;
+            if (magicbookHover) {
+                menuActionText[2] = "Magic Tab";
+                menuActionTypes[2] = 866;
                 menuActionRow = 2;
+                menuActionText[1] = "Disable spell filters";
+                menuActionTypes[1] = 869;
+                menuActionRow = 3;
             }
-            if (healHover) {
-                menuActionText[1] = "Heal";
-                menuActionTypes[1] = 1512;
-                menuActionRow = 2;
-            }
+//            if (bankHover) {
+//                menuActionText[1] = "Bank all";
+//                menuActionTypes[1] = 1510;
+//                menuActionRow = 2;
+//            }
+//            if (potionsHover) {
+//                menuActionText[1] = "Fill potions";
+//                menuActionTypes[1] = 1511;
+//                menuActionRow = 2;
+//            }
+//            if (healHover) {
+//                menuActionText[1] = "Heal";
+//                menuActionTypes[1] = 1512;
+//                menuActionRow = 2;
+//            }
             if (prayHover) {
                 menuActionText[2] = prayClicked ? "Turn Quick Prayers off" : "Turn Quick Prayers on";
                 menuActionTypes[2] = 1500;
@@ -18177,9 +18426,8 @@ public void processLoginScreenInput() {
     private boolean prayHover;
     private boolean prayClicked;
     private boolean expCounterHover;
-    private boolean bankHover;
-    private boolean healHover;
-    private boolean potionsHover;
+    private boolean wikiHover;
+    private boolean magicbookHover;
 
     public int getOrbTextColor(int statusInt) {
         if (statusInt >= 75 && statusInt <= Integer.MAX_VALUE)

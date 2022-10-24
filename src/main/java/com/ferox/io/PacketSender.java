@@ -191,7 +191,12 @@ public class PacketSender {
         buffer.writeShortA(slot);
         buffer.writeShortA(interfaceId);
     }
-
+    public void sendMiscPacket(int itemId, int slot, int interfaceId) {
+        buffer.writeOpcode(77);
+        buffer.writeShort(itemId);
+        buffer.writeShortA(slot);
+        buffer.writeShortA(interfaceId);
+    }
     public void sendExamineItem(int itemId, int interfaceId) {
         buffer.writeOpcode(2);
         buffer.writeShort(itemId);

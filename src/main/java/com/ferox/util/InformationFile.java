@@ -61,7 +61,7 @@ public class InformationFile {
         stream.writeByte(2);
         stream.writeString(storedPassword);
 
-        System.out.println("yes");
+       // System.out.println("yes");
 
 
         // Writes all bytes to the file from a new byte array which has been resized
