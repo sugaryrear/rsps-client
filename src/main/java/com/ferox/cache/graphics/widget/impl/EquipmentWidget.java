@@ -15,7 +15,7 @@ public class EquipmentWidget extends Widget {
     public static void unpack(AdvancedFont[] font) {
         equipment_bonus_widget(font);
         equipment_tab_widget();
-        buildEquipmentTab();
+      //  buildEquipmentTab();
     }
 
     public static void buildEquipmentTab() {
@@ -29,13 +29,6 @@ public class EquipmentWidget extends Widget {
     }
 
     private static void equipment_bonus_widget(AdvancedFont[] font) {
-        Widget bankEquipment = addTabInterface(15150);
-
-        addButton(15151, 765,"Hide worn items");
-        addSprite(15152, 1250);
-        bankEquipment.totalChildren(2);
-        bankEquipment.child(0, 15151,5,20);
-        bankEquipment.child(1, 15152,6,25);
 
         Widget widget = addTabInterface(15106);
         addSprite(15107, 874);
@@ -60,7 +53,7 @@ public class EquipmentWidget extends Widget {
         textSize(1686, font, 1);
         textSize(1687, font, 1);
         addCharacterToInterface(15125, 560);
-        widget.totalChildren(51);
+        widget.totalChildren(50);
         widget.child(0, 15107, 6, 6);
         widget.child(1, 15210, 476, 14);
         widget.child(2, 15111, 17, 16);
@@ -113,8 +106,8 @@ public class EquipmentWidget extends Widget {
         widget.child(46, 15116, 333, 237); // Range strength
         widget.child(47, 15117, 333, 251); // Magic damage
         widget.child(48, 15122, 35, 265); // Weight text
-        widget.child(49, 15150, 20, 22); // Bank equipment widget
-        widget.child(50, 15123, 35, 280); // Drop rate
+       // widget.child(49, 15150, 20, 22); // Bank equipment widget
+        widget.child(49, 15123, 35, 280); // Drop rate
         for (int childs = 1675; childs <= 1684; childs++) {
             Widget rsi = cache[childs];
             rsi.textColour = 0xff981f; // Attack bonuses Color
@@ -135,6 +128,7 @@ public class EquipmentWidget extends Widget {
         removeConfig(21340);
         removeConfig(15103);
         removeConfig(15104);
+
         Widget main_widget = cache[1644];
         main_widget.children[26] = 27650;
         main_widget.child_x[26] = 0;
@@ -143,7 +137,6 @@ public class EquipmentWidget extends Widget {
         //Move equipment widget
         main_widget.child_x[23] = 23;
         main_widget.child_y[23] = 42;
-
         main_widget = addInterface(27650);
 
         addHoverButton(27651, 146, 40, 40, "View guide prices", -1, 27652, 1);

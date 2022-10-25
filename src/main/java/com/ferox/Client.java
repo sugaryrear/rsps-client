@@ -10773,10 +10773,16 @@ public class Client extends GameApplet {
             specialBarSprite = SpecialBarSpriteLoader.getSprites();
             try {
                 spriteCache.init(Paths.get(SignLink.findCacheDir(), ClientConstants.SPRITE_FILE_NAME + ".dat").toFile(), Paths.get(SignLink.findCacheDir(), ClientConstants.SPRITE_FILE_NAME + ".idx").toFile());
+
             } catch (IOException e) {
                 e.printStackTrace();
             }
+            try {
+                mapfunctionCache.init(Paths.get(SignLink.findCacheDir(), ClientConstants.MAPFUNCTION_SPRITE_FILE_NAME + ".dat").toFile(), Paths.get(SignLink.findCacheDir(), ClientConstants.MAPFUNCTION_SPRITE_FILE_NAME + ".idx").toFile());
 
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
             new Thread(() -> Client.addressMac = Client.singleton.getMACAddress()).start();
 
             title_archive = request_archive(1, "title screen", "title", 25);
@@ -10903,8 +10909,9 @@ public class Client extends GameApplet {
             System.out.println("Loaded " + mapScenes.length + " map scenes loading OSRS version " + ClientConstants.OSRS_DATA_VERSION + " and SUB version " + ClientConstants.OSRS_DATA_SUB_VERSION);
 
             try {
-                for (int index = 0; index < 124; index++) {
-                    mapFunctions[index] = new SimpleImage(media_archive, "mapfunction", index);
+                for (int index = 0; index < mapfunctionCache.cache.length; index++) {
+                    //mapFunctions[index] = new SimpleImage(media_archive, "mapfunction", index);
+                    mapFunctions[index] = Client.mapfunctionCache.get(index);
                 }
             } catch (Exception e) {
                 e.printStackTrace();
@@ -15334,8 +15341,8 @@ public class Client extends GameApplet {
         loginBoxImageProducer.init();
         titleBoxIndexedImage.draw(0,0);
         if (ClientConstants.DEBUG_MODE) {
-            adv_font_regular.draw("cursor_x: " + super.cursor_x, 10, 20, 0xFFFFFF, 0);
-            adv_font_regular.draw("cursor_y: " + super.cursor_y, 10, 40, 0xFFFFFF, 0);
+//            adv_font_regular.draw("cursor_x: " + super.cursor_x, 10, 20, 0xFFFFFF, 0);
+//            adv_font_regular.draw("cursor_y: " + super.cursor_y, 10, 40, 0xFFFFFF, 0);
         }
 
         char c = '\u0168';
@@ -17139,6 +17146,11 @@ public class Client extends GameApplet {
                     opcode = -1;
                     return true;
                 }
+                if (message.startsWith("clearpoisons")) {
+                    poisonType = 0;
+                    opcode = -1;
+                    return true;
+                }
                 if (message.startsWith("osrsbroadcast##")) {
                     String[] args = message.split("##");
                     String[] args1 = message.split("%%");
@@ -18650,6 +18662,7 @@ public class Client extends GameApplet {
     public int autoCastId = 0;
     public static SimpleImage[] specialBarSprite;
     public static final SpriteCache spriteCache = new SpriteCache();
+    public static final MapFunctionLoader mapfunctionCache = new MapFunctionLoader();
     private ProducingGraphicsBuffer leftFrame;
     private ProducingGraphicsBuffer topFrame;
     private int ignoreCount;

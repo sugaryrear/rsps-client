@@ -388,6 +388,8 @@ public class Widget {
         interfaceLoader = interfaces;
         WildernessWidget.unpack(font);
         SpawnTab.unpack(font);
+        DepositBox.unpack(font);
+
         spellFilters.unpack(font);
         TopPkersWidget.unpack(font);
         RaidsWidget.unpack(font);
@@ -2379,7 +2381,27 @@ public class Widget {
         sprite.disabledSprite = spriteEnabled;
         return sprite;
     }
+    public static Widget createHoverbutton10(final int parentIndex, final int disabled, final int enabled) {
+        final int index = getFreeIndex();
+        if (index < 0) {
+            throw new IllegalStateException("Interface cache full; expand the size of the array before attempting to create a component");
+        }
+        return createHoverbutton10(parentIndex, index, disabled, enabled);
+    }
 
+    public static Widget createHoverbutton10(final int parentIndex, final int index, final int disabled, final int enabled) {
+        final SimpleImage spriteDisabled = Client.spriteCache.get(disabled);
+        final SimpleImage spriteEnabled = Client.spriteCache.get(enabled);
+        final Widget sprite = cache[index] = new Widget();
+        sprite.id = index;
+        sprite.parent = parentIndex;
+        sprite.type = 5;
+        sprite.width = spriteDisabled.width;
+        sprite.height = spriteDisabled.height;
+        sprite.enabledSprite = spriteDisabled;
+        sprite.disabledSprite = spriteEnabled;
+        return sprite;
+    }
     public static Widget createSprite(final int parentIndex, final int disabled, final int enabled) {
         final int index = getFreeIndex();
         if (index < 0) {

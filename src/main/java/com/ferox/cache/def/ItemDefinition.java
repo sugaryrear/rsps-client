@@ -48,137 +48,166 @@ public final class ItemDefinition {
         //dump();
     }
 
-//    public void decode(Buffer buffer) {
-//        while (true) {
-//            int opcode = buffer.readUByte();
-//            if (opcode == 0)
-//                return;
-//            if (opcode == 1)
-//                inventory_model = buffer.readUShort();
-//            else if (opcode == 2)
-//                name = buffer.readString();
-//            else if (opcode == 3)
-//                description = buffer.readString();
-//            else if (opcode == 4)
-//                model_zoom = buffer.readUShort();
-//            else if (opcode == 5)
-//                rotation_y = buffer.readUShort();
-//            else if (opcode == 6)
-//                rotation_x = buffer.readUShort();
-//            else if (opcode == 7) {
-//                translate_x = buffer.readUShort();
-//                if (translate_x > 32767)
-//                    translate_x -= 0x10000;
-//            } else if (opcode == 8) {
-//                translate_y = buffer.readUShort();
-//                if (translate_y > 32767)
-//                    translate_y -= 0x10000;
-//            } else if (opcode == 11)
-//                stackable = true;
-//            else if (opcode == 12)
-//                cost = buffer.readInt();
-//            else if (opcode == 16)
-//                membership_required = true;
-//            else if (opcode == 23) {
-//                male_equip_main = buffer.readUShort();
-//                male_equip_translate_y = buffer.readSignedByte();
-//            } else if (opcode == 24)
-//                male_equip_attachment = buffer.readUShort();
-//            else if (opcode == 25) {
-//                female_equip_main = buffer.readUShort();
-//                female_equip_translate_y = buffer.readSignedByte();
-//            } else if (opcode == 26)
-//                female_equip_attachment = buffer.readUShort();
-//            else if (opcode >= 30 && opcode < 35) {
-//                if (scene_actions == null)
-//                    scene_actions = new String[5];
 //
-//                scene_actions[opcode - 30] = buffer.readString();
-//                if (scene_actions[opcode - 30].equalsIgnoreCase("hidden"))
-//                    scene_actions[opcode - 30] = null;
-//
-//            } else if (opcode >= 35 && opcode < 40) {
-//                if (widget_actions == null)
-//                    widget_actions = new String[5];
-//
-//                widget_actions[opcode - 35] = buffer.readString();
-//
-//            } else if (opcode == 40) {
-//                int length = buffer.readUByte();
-//                //if models aren't recoloring properly, typically switch the position of src with dst
-//                color_to_replace = new int[length];
-//                color_to_replace_with = new int[length];
-//                for (int index = 0; index < length; index++) {
-//                    color_to_replace_with[index] = buffer.readUShort();
-//                    color_to_replace[index] = buffer.readUShort();
-//                }
-//            } else if (opcode == 41) {
-//                int length = buffer.readUByte();
-//                src_texture = new short[length];
-//                dst_texture = new short[length];
-//                for (int index = 0; index < length; index++) {
-//                    src_texture[index] = (short) buffer.readUShort();
-//                    dst_texture[index] = (short) buffer.readUShort();
-//                }
-//            } else if (opcode == 42) {
-//                buffer.readUByte();//shift_menu_index
-//            } else if (opcode == 65) {
-//                searchable = true;
-//            } else if (opcode == 78)
-//                male_equip_emblem = buffer.readUShort();
-//            else if (opcode == 79)
-//                female_equip_emblem = buffer.readUShort();
-//            else if (opcode == 90)
-//                male_dialogue_head = buffer.readUShort();
-//            else if (opcode == 91)
-//                female_dialogue_head = buffer.readUShort();
-//            else if (opcode == 92)
-//                male_dialogue_headgear = buffer.readUShort();
-//            else if (opcode == 93)
-//                female_dialogue_headgear = buffer.readUShort();
-//            else if (opcode == 95)
-//                rotation_z = buffer.readUShort();
-//            else if (opcode == 97)
-//                unnoted_item_id = buffer.readUShort();
-//            else if (opcode == 98)
-//                noted_item_id = buffer.readUShort();
-//            else if (opcode >= 100 && opcode < 110) {
-//                if (stack_variant_id == null) {
-//                    stack_variant_id = new int[10];
-//                    stack_variant_size = new int[10];
-//                }
-//                stack_variant_id[opcode - 100] = buffer.readUShort();
-//                stack_variant_size[opcode - 100] = buffer.readUShort();
-//            } else if (opcode == 110)
-//                model_scale_x = buffer.readUShort();
-//            else if (opcode == 111)
-//                model_scale_y = buffer.readUShort();
-//            else if (opcode == 112)
-//                model_scale_z = buffer.readUShort();
-//            else if (opcode == 113)
-//                ambient = buffer.readSignedByte();
-//            else if (opcode == 114)
-//                contrast = buffer.readSignedByte(); //We had this as * 5 but runelite has it without * 5.
-//            else if (opcode == 115)
-//                team_id = buffer.readUByte();
-//            else if (opcode == 139)
-//                unnotedId = buffer.readUShort();
-//            else if (opcode == 140)
-//                notedId = buffer.readUShort();
-//            else if (opcode == 148)
-//                buffer.readUShort(); // placeholder id
-//            else if (opcode == 149) {
-//                buffer.readUShort(); // placeholder template
+//private void decode(Buffer buffer) {
+//    while (true) {
+//        int opcode = buffer.readUnsignedByte();
+//        if (opcode == 0)
+//            return;
+//        int category;
+//        int placeholder_id;
+//        if (opcode == 1)
+//            inventory_model = buffer.readUShort();
+//        else if (opcode == 2)
+//            name = buffer.readString();
+//        else if (opcode == 3)
+//            description = buffer.readString();
+//        else if (opcode == 4)
+//            model_zoom  = buffer.readUShort();
+//        else if (opcode == 5)
+//            rotation_y  = buffer.readUShort();
+//        else if (opcode == 6)
+//            rotation_x  = buffer.readUShort();
+//        else if (opcode == 7) {
+//            translate_x  = buffer.readUShort();
+//            if (translate_x  > 32767)
+//                translate_x  -= 0x10000;
+//        } else if (opcode == 8) {
+//            translate_y  = buffer.readUShort();
+//            if (translate_y  > 32767)
+//                translate_y  -= 0x10000;
+//        } else if (opcode == 11)
+//            stackable = true;
+//        else if (opcode == 12)
+//            cost  = buffer.readInt();
+//        else if (opcode == 16)
+//            membership_required = true;
+//        else if (opcode == 23) {
+//            male_equip_main = buffer.readUShort();
+//            male_equip_translate_y = buffer.readSignedByte();
+//        } else if (opcode == 24)
+//            male_equip_attachment = buffer.readUShort();
+//        else if (opcode == 25) {
+//            female_equip_main = buffer.readUShort();
+//            female_equip_attachment = buffer.readSignedByte();
+//        } else if (opcode == 26)
+//            female_equip_attachment  = buffer.readUShort();
+//        else if (opcode >= 30 && opcode < 35) {
+//            if (scene_actions == null)
+//                scene_actions = new String[5];
+//            scene_actions[opcode - 30] = buffer.readString();
+//            if (scene_actions[opcode - 30].equalsIgnoreCase("hidden"))
+//                scene_actions[opcode - 30] = null;
+//        } else if (opcode >= 35 && opcode < 40) {
+//            if (widget_actions == null)
+//                widget_actions = new String[5];
+//            widget_actions[opcode - 35] = buffer.readString();
+//        } else if (opcode == 40) {
+//            int length = buffer.readUnsignedByte();
+//            color_to_replace  = new int[length];
+//            color_to_replace_with  = new int[length];
+//            for (int index = 0; index < length; index++) {
+//                color_to_replace_with [index] = buffer.readUShort();
+//                color_to_replace [index] = buffer.readUShort();
 //            }
+//        } else if (opcode == 41) {
+//            int length = buffer.readUnsignedByte();
+//            src_texture = new short[length];
+//            dst_texture = new short[length];
+//            for (int index = 0; index < length; index++) {
+//                src_texture[index] = (short) buffer.readUShort();
+//                dst_texture[index] = (short) buffer.readUShort();
+//            }
+//        } else if (opcode == 42) {
+//            int shiftClickIndex = buffer.readUnsignedByte();
+//        } else if (opcode == 65) {
+//            searchable  = true;
+//        } else if (opcode == 78)
+//            male_equip_emblem = buffer.readUShort();
+//        else if (opcode == 79)
+//            female_equip_emblem = buffer.readUShort();
+//        else if (opcode == 90)
+//            male_dialogue_head = buffer.readUShort();
+//        else if (opcode == 91)
+//            female_dialogue_head = buffer.readUShort();
+//        else if (opcode == 92)
+//            male_dialogue_headgear  = buffer.readUShort();
+//        else if (opcode == 93)
+//            female_dialogue_headgear  = buffer.readUShort();
+//        else if (opcode == 94)
+//            category = buffer.readUShort();
+//
+//        else if (opcode == 95)
+//            rotation_z  = buffer.readUShort();
+//        else if (opcode == 97)
+//            unnoted_item_id = buffer.readUShort();
+//        else if (opcode == 98)
+//            noted_item_id = buffer.readUShort();
+//        else if (opcode >= 100 && opcode < 110) {
+//
+//            if (stack_variant_id == null) {
+//                stack_variant_id = new int[10];
+//                stack_variant_size = new int[10];
+//            }
+//            stack_variant_id[opcode - 100] = buffer.readUShort();
+//            stack_variant_size[opcode - 100] = buffer.readUShort();
+//
+//        } else if (opcode == 110)
+//            model_scale_x  = buffer.readUShort();
+//        else if (opcode == 111)
+//            model_scale_y  = buffer.readUShort();
+//        else if (opcode == 112)
+//            model_scale_z  = buffer.readUShort();
+//        else if (opcode == 113)
+//            ambient  = buffer.readSignedByte();
+//        else if (opcode == 114)
+//            contrast  = buffer.readSignedByte() * 5;
+//        else if (opcode >= 100 && opcode < 110) {
+//            if (stack_variant_id == null) {
+//                stack_variant_id = new int[10];
+//                stack_variant_size = new int[10];
+//            }
+//            stack_variant_id[opcode - 100] = buffer.readUShort();
+//            stack_variant_size[opcode - 100] = buffer.readUShort();
+//        }
+//        else if (opcode == 115)
+//            team_id  = buffer.readUnsignedByte();
+//        else if (opcode == 139)
+//            unnotedId  = buffer.readUShort();
+//        else if (opcode == 140)
+//            notedId  = buffer.readUShort();
+//        else if (opcode == 148)
+//            placeholder_id = buffer.readUShort();
+//        else if (opcode == 149) {
+//            int placeholder_template_id = buffer.readUShort();
+//        } else if (opcode == 249) {
+//            int length = buffer.readUnsignedByte();
+//
+//            params = new HashMap<>(length);
+//
+//            for (int i = 0; i < length; i++) {
+//                boolean isString = buffer.readUnsignedByte() == 1;
+//                int key = buffer.read24Int();
+//                Object value;
+//
+//                if (isString) {
+//                    value = buffer.readString();
+//                } else {
+//                    value = buffer.readInt();
+//                }
+//
+//                params.put(key, value);
+//            }
+//        } else {
+//            System.err.printf("Error unrecognised {Items} opcode: %d%n%n", opcode);
 //        }
 //    }
-private void decode(Buffer buffer) {
+//}
+public void decode(Buffer buffer) {
     while (true) {
-        int opcode = buffer.readUnsignedByte();
+        int opcode = buffer.readUByte();
         if (opcode == 0)
             return;
-        int category;
-        int placeholder_id;
         if (opcode == 1)
             inventory_model = buffer.readUShort();
         else if (opcode == 2)
@@ -186,23 +215,23 @@ private void decode(Buffer buffer) {
         else if (opcode == 3)
             description = buffer.readString();
         else if (opcode == 4)
-            model_zoom  = buffer.readUShort();
+            model_zoom = buffer.readUShort();
         else if (opcode == 5)
-            rotation_y  = buffer.readUShort();
+            rotation_y = buffer.readUShort();
         else if (opcode == 6)
-            rotation_x  = buffer.readUShort();
+            rotation_x = buffer.readUShort();
         else if (opcode == 7) {
-            translate_x  = buffer.readUShort();
-            if (translate_x  > 32767)
-                translate_x  -= 0x10000;
+            translate_x = buffer.readUShort();
+            if (translate_x > 32767)
+                translate_x -= 0x10000;
         } else if (opcode == 8) {
-            translate_y  = buffer.readUShort();
-            if (translate_y  > 32767)
-                translate_y  -= 0x10000;
+            translate_y = buffer.readUShort();
+            if (translate_y > 32767)
+                translate_y -= 0x10000;
         } else if (opcode == 11)
             stackable = true;
         else if (opcode == 12)
-            cost  = buffer.readInt();
+            cost = buffer.readInt();
         else if (opcode == 16)
             membership_required = true;
         else if (opcode == 23) {
@@ -212,29 +241,34 @@ private void decode(Buffer buffer) {
             male_equip_attachment = buffer.readUShort();
         else if (opcode == 25) {
             female_equip_main = buffer.readUShort();
-            female_equip_attachment = buffer.readSignedByte();
+            female_equip_translate_y = buffer.readSignedByte();
         } else if (opcode == 26)
-            female_equip_attachment  = buffer.readUShort();
+            female_equip_attachment = buffer.readUShort();
         else if (opcode >= 30 && opcode < 35) {
             if (scene_actions == null)
                 scene_actions = new String[5];
+
             scene_actions[opcode - 30] = buffer.readString();
             if (scene_actions[opcode - 30].equalsIgnoreCase("hidden"))
                 scene_actions[opcode - 30] = null;
+
         } else if (opcode >= 35 && opcode < 40) {
             if (widget_actions == null)
                 widget_actions = new String[5];
+
             widget_actions[opcode - 35] = buffer.readString();
+
         } else if (opcode == 40) {
-            int length = buffer.readUnsignedByte();
-            color_to_replace  = new int[length];
-            color_to_replace_with  = new int[length];
+            int length = buffer.readUByte();
+            //if models aren't recoloring properly, typically switch the position of src with dst
+            color_to_replace = new int[length];
+            color_to_replace_with = new int[length];
             for (int index = 0; index < length; index++) {
-                color_to_replace_with [index] = buffer.readUShort();
-                color_to_replace [index] = buffer.readUShort();
+                color_to_replace_with[index] = buffer.readUShort();
+                color_to_replace[index] = buffer.readUShort();
             }
         } else if (opcode == 41) {
-            int length = buffer.readUnsignedByte();
+            int length = buffer.readUByte();
             src_texture = new short[length];
             dst_texture = new short[length];
             for (int index = 0; index < length; index++) {
@@ -242,9 +276,9 @@ private void decode(Buffer buffer) {
                 dst_texture[index] = (short) buffer.readUShort();
             }
         } else if (opcode == 42) {
-            int shiftClickIndex = buffer.readUnsignedByte();
+            buffer.readUByte();//shift_menu_index
         } else if (opcode == 65) {
-            searchable  = true;
+            searchable = true;
         } else if (opcode == 78)
             male_equip_emblem = buffer.readUShort();
         else if (opcode == 79)
@@ -254,75 +288,46 @@ private void decode(Buffer buffer) {
         else if (opcode == 91)
             female_dialogue_head = buffer.readUShort();
         else if (opcode == 92)
-            male_dialogue_headgear  = buffer.readUShort();
+            male_dialogue_headgear = buffer.readUShort();
         else if (opcode == 93)
-            female_dialogue_headgear  = buffer.readUShort();
-        else if (opcode == 94)
-            category = buffer.readUShort();
-
+            female_dialogue_headgear = buffer.readUShort();
+        else if(opcode == 94)
+            buffer.readUShort();
         else if (opcode == 95)
-            rotation_z  = buffer.readUShort();
+            rotation_z = buffer.readUShort();
         else if (opcode == 97)
             unnoted_item_id = buffer.readUShort();
         else if (opcode == 98)
             noted_item_id = buffer.readUShort();
         else if (opcode >= 100 && opcode < 110) {
-
             if (stack_variant_id == null) {
                 stack_variant_id = new int[10];
                 stack_variant_size = new int[10];
             }
             stack_variant_id[opcode - 100] = buffer.readUShort();
             stack_variant_size[opcode - 100] = buffer.readUShort();
-
         } else if (opcode == 110)
-            model_scale_x  = buffer.readUShort();
+            model_scale_x = buffer.readUShort();
         else if (opcode == 111)
-            model_scale_y  = buffer.readUShort();
+            model_scale_y = buffer.readUShort();
         else if (opcode == 112)
-            model_scale_z  = buffer.readUShort();
+            model_scale_z = buffer.readUShort();
         else if (opcode == 113)
-            ambient  = buffer.readSignedByte();
+            ambient = buffer.readSignedByte();
         else if (opcode == 114)
-            contrast  = buffer.readSignedByte() * 5;
-        else if (opcode >= 100 && opcode < 110) {
-            if (stack_variant_id == null) {
-                stack_variant_id = new int[10];
-                stack_variant_size = new int[10];
-            }
-            stack_variant_id[opcode - 100] = buffer.readUShort();
-            stack_variant_size[opcode - 100] = buffer.readUShort();
-        }
+            contrast = buffer.readSignedByte(); //We had this as * 5 but runelite has it without * 5.
         else if (opcode == 115)
-            team_id  = buffer.readUnsignedByte();
+            team_id = buffer.readUByte();
         else if (opcode == 139)
-            unnotedId  = buffer.readUShort();
+            unnotedId = buffer.readUShort();
         else if (opcode == 140)
-            notedId  = buffer.readUShort();
+            notedId = buffer.readUShort();
         else if (opcode == 148)
-            placeholder_id = buffer.readUShort();
+            buffer.readUShort(); // placeholder id
         else if (opcode == 149) {
-            int placeholder_template_id = buffer.readUShort();
-        } else if (opcode == 249) {
-            int length = buffer.readUnsignedByte();
-
-            params = new HashMap<>(length);
-
-            for (int i = 0; i < length; i++) {
-                boolean isString = buffer.readUnsignedByte() == 1;
-                int key = buffer.read24Int();
-                Object value;
-
-                if (isString) {
-                    value = buffer.readString();
-                } else {
-                    value = buffer.readInt();
-                }
-
-                params.put(key, value);
-            }
-        } else {
-            System.err.printf("Error unrecognised {Items} opcode: %d%n%n", opcode);
+            buffer.readUShort(); // placeholder template
+        } else if (opcode == 150) {
+            String opcode150 = buffer.readString();
         }
     }
 }

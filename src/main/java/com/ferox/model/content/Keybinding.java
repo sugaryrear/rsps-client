@@ -60,7 +60,7 @@ public class Keybinding {
     public static void onVarpUpdate(int varpId, int newVal) {
         // If the user is toggling on the escape keybind to close interfaces then remove it from any other mappings.
         if (varpId == ConfigUtility.ESC_CLOSE_ID && newVal != 0) {
-            System.out.println("Here2");
+           // System.out.println("Here2");
             for (int i = 0; i < KEYBINDINGS.length; i++) {
                 if (KEYBINDINGS[i] == KeyEvent.VK_ESCAPE) {
                     turnoffBindFor(i);

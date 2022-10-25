@@ -64,6 +64,7 @@ public final class ClientConstants {
     public static boolean ENABLE_RESTARTING_LOGIN_SONG = true;
 
     public static final String SPRITE_FILE_NAME = "main_file_sprites";
+    public static final String MAPFUNCTION_SPRITE_FILE_NAME = "mapfunction_file_sprites";
 
     /**
      * Allow walking over the wilderness ditch
