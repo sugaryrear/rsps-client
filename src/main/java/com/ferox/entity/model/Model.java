@@ -117,20 +117,6 @@ public class Model extends Renderable {
         }
     }
 
-//    public Model(int modelId) {
-//        byte[] data = aClass21Array1661[modelId].data;
-//        if (data[data.length - 1] == -1 && data[data.length - 2] == -1) {
-//            readNewModel(data, modelId);//decodetype1
-//        } else {
-//            readOldModel(data, modelId);
-//        }
-//
-//        repeatTexture = new boolean[faces];
-//
-//        if (repeatedTextureModels.contains(modelId)) {
-//            Arrays.fill(repeatTexture, true);
-//        }
-//    }
 int[][] field2180;//todo new osrs anim stuff
     int[][] field2181;//todo new osrs anim stuff
 

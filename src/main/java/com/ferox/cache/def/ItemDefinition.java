@@ -9,14 +9,14 @@ import com.ferox.entity.model.Model;
 import com.ferox.io.Buffer;
 import com.ferox.model.texture.TextureCoordinate;
 import com.ferox.util.FileUtils;
+import com.ferox.cache.def.ItemList;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
+import java.io.*;
+import java.net.URL;
+import java.net.URLConnection;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.*;
 
 import static com.ferox.util.ItemIdentifiers.*;
 
@@ -46,8 +46,259 @@ public final class ItemDefinition {
         }
 
         //dump();
+//        try {
+//            printit(35);
+//        } catch (IOException e) {
+//            throw new RuntimeException(e);
+//        }
+
+
+
+    }
+    public static ItemList getItemList(int itemId) {
+        if (itemId < 0 || itemId > ItemList.length) {
+            return null;
+        }
+        return ItemList[itemId];
     }
 
+    public static void newItemList(int itemId, String ItemName, String ItemDescription, double ShopValue, double LowAlch, double HighAlch, int Bonuses[]) {
+        ItemList newItemList = new ItemList(itemId);
+        newItemList.itemName = ItemName;
+        newItemList.itemDescription = ItemDescription;
+        newItemList.ShopValue = ShopValue;
+        newItemList.LowAlch = LowAlch;
+        newItemList.HighAlch = HighAlch;
+        newItemList.Bonuses = Bonuses;
+        ItemList[itemId] = newItemList;
+    }
+    public static ItemList[] ItemList;
+    public static boolean loadItemList(String FileName) {
+        String line = "";
+        String token = "";
+        String token2 = "";
+        String token2_2 = "";
+        String[] token3;
+        ItemList = new ItemList[70000];
+        for (int i = 0; i < 70000; i++) {
+            ItemList[i] = null;
+        }
+        try (BufferedReader file = new BufferedReader(new FileReader( FileName))) {
+            while ((line = file.readLine()) != null && !line.equals("[ENDOFITEMLIST]")) {
+                line = line.trim();
+                int spot = line.indexOf("=");
+                if (spot > -1) {
+                    token = line.substring(0, spot);
+                    token = token.trim();
+                    token2 = line.substring(spot + 1);
+                    token2 = token2.trim();
+                    token2_2 = token2.replaceAll("\t\t", "\t");
+                    token2_2 = token2_2.replaceAll("\t\t", "\t");
+                    token2_2 = token2_2.replaceAll("\t\t", "\t");
+                    token2_2 = token2_2.replaceAll("\t\t", "\t");
+                    token2_2 = token2_2.replaceAll("\t\t", "\t");
+                    token3 = token2_2.split("\t");
+                    if (token.equals("item")) {
+                        int[] Bonuses = new int[12];
+                        for (int i = 0; i < 12; i++)
+                            if (token3[(6 + i)] != null) {
+                                Bonuses[i] = Integer.parseInt(token3[(6 + i)]);
+                            } else {
+                                break;
+                            }
+                        newItemList(Integer.parseInt(token3[0]), token3[1].replaceAll("_", " "), token3[2].replaceAll("_", " "), Double.parseDouble(token3[4]),
+                            Double.parseDouble(token3[4]), Double.parseDouble(token3[6]), Bonuses);
+                    }
+                }
+            }
+        } catch (FileNotFoundException fileex) {
+            System.out.println("file not found");
+            return false;
+        } catch (IOException ioexception) {
+            return false;
+        }
+        return true;
+    }
+    private static BufferedWriter writer;
+
+    public static void printit(int id) throws IOException {
+        writer = new BufferedWriter(new FileWriter(ClientConstants.DATA_DIR + "items/item.json", true));
+        for(ItemList item : ItemList){
+
+            if(item == null)
+                continue;
+            writer.write("  {\n\t\"id\": " + item.itemId + ",\n\t\"bonuses\": [\n\t  " + item.Bonuses[0] + ",\n\t  " + item.Bonuses[1]
+                + ",\n\t  " + item.Bonuses[2]+ ",\n\t  " + item.Bonuses[3] + ",\n\t  "
+                + item.Bonuses[4] + ",\n\t  " + item.Bonuses[5] + ",\n\t  " + item.Bonuses[6]
+                + ",\n\t  " + item.Bonuses[7] + ",\n\t  " + item.Bonuses[8] + ",\n\t  "
+                + item.Bonuses[9] + ",\n\t  " + item.Bonuses[10] + ",\n\t  " + item.Bonuses[11] + "\n\t]\n\t },\n");
+
+
+        }            writer.close();
+    }
+    public static void getExamineInfo(int i) throws IOException {
+
+        String[] bonuses = new String[14];
+        bonuses[0] = bonuses[1] = bonuses[2] = bonuses[3] = bonuses[4] = bonuses[5] = bonuses[6] = bonuses[7] = bonuses[8] = bonuses[9] = bonuses[10] = bonuses[13] = "";
+        int slotnumber = 0;
+        ItemDefinition item = ItemDefinition.get(i);
+
+        URL url;
+        url = new URL("https://oldschool.runescape.wiki/w/" + item.name.replaceAll(" ", "_").replace("(beta - dragon)","").replace("(beta - rune)","").replace("(beta - adamant)","").replace("(beta - mithril)","").replace("(beta - black)","").replace("(beta - steel)","").replace("(beta - iron)","").replace("(beta - bronze)","").replace("(beta)","").replace("(uncharged)","").replace("(l)","").replace("(broken)","").replace("(4)","").replace("(3)","") .replace("(2)","") .replace("(1)","")  + "?action=raw");
+        URLConnection con = url.openConnection();
+        con.addRequestProperty("User-Agent", "Chrome");
+        BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
+
+        String output = "";
+        String fullmask = "false";
+        String twoHanded = "false";
+        String stackable = "false";
+        String noteable = "true";
+        String tradeable = "";
+        // boolean wearable1 = false;
+        String wearable = "true";
+        String showBeard = "true";
+        String members = "true";
+
+        String whichslot = "";
+        String isittradeable = "";
+        List<String> examine = new ArrayList<>();
+        List<String> stab = new ArrayList<>();
+        List<String> slash = new ArrayList<>();
+        List<String> crush = new ArrayList<>();
+        List<String> magic = new ArrayList<>();
+        List<String> range = new ArrayList<>();
+        List<String> dstab = new ArrayList<>();
+        List<String> dslash = new ArrayList<>();
+        List<String> dcrush = new ArrayList<>();
+        List<String> dmagic = new ArrayList<>();
+        List<String> drange = new ArrayList<>();
+        List<String> str = new ArrayList<>();
+        List<String> prayer = new ArrayList<>();
+        List<String> slot= new ArrayList<>();
+        List<String> tradeables= new ArrayList<>();
+
+        writer = new BufferedWriter(new FileWriter(System.getProperty("user.home") + "/Desktop/Item Dumpbonuses.cfg", true));
+        java.util.stream.Stream <String>tradeableitem=in.lines();
+        tradeableitem.filter(line ->line.contains("|tradeable")).findFirst().ifPresent(tradeables::add);
+
+        java.util.stream.Stream <String>examines=in.lines();
+        examines.filter(line ->line.contains("|examine")).findFirst().ifPresent(examine::add);
+
+        java.util.stream.Stream <String>stabs=in.lines();
+        stabs.filter(line ->line.contains("|astab")).findFirst().ifPresent(stab::add);
+
+        java.util.stream.Stream <String>slashes=in.lines();
+        slashes.filter(line ->line.contains("|aslash")).findFirst().ifPresent(slash::add);
+
+        java.util.stream.Stream <String>crushes=in.lines();
+        crushes.filter(line ->line.contains("|acrush")).findFirst().ifPresent(crush::add);
+
+        java.util.stream.Stream <String>magics=in.lines();
+        magics.filter(line ->line.contains("|amagic")).findFirst().ifPresent(magic::add);
+
+        java.util.stream.Stream <String>ranges=in.lines();
+        ranges.filter(line ->line.contains("|arange")).findFirst().ifPresent(range::add);
+
+        java.util.stream.Stream <String>dstabs=in.lines();
+        dstabs.filter(line ->line.contains("|dstab")).findFirst().ifPresent(dstab::add);
+
+        java.util.stream.Stream <String>dslashes=in.lines();
+        dslashes.filter(line ->line.contains("|dslash")).findFirst().ifPresent(dslash::add);
+
+        java.util.stream.Stream <String>dcrushes=in.lines();
+        dcrushes.filter(line ->line.contains("|dcrush")).findFirst().ifPresent(dcrush::add);
+
+        java.util.stream.Stream <String>dmagics=in.lines();
+        dmagics.filter(line ->line.contains("|dmagic")).findFirst().ifPresent(dmagic::add);
+
+        java.util.stream.Stream <String>dranges=in.lines();
+        dranges.filter(line ->line.contains("|drange")).findFirst().ifPresent(drange::add);
+
+        java.util.stream.Stream <String>strength=in.lines();
+        strength.filter(line ->line.contains("|str")).findFirst().ifPresent(str::add);
+
+        java.util.stream.Stream <String>prayers=in.lines();
+        prayers.filter(line ->line.contains("|prayer")).findFirst().ifPresent(prayer::add);
+
+        java.util.stream.Stream <String>slots=in.lines();
+        slots.filter(line ->line.contains("|slot")).findFirst().ifPresent(slot::add);
+
+        tradeable = tradeables.isEmpty() ? "false" : tradeables.get(0).toString().replace("|tradeable = ","").replace("|tradeable1 = ","");
+
+
+
+        output = examine.isEmpty() ? "null" : examine.get(0).toString().replace("|examine = ","").replace("|examine1 = ","").replaceAll("1 dose of"," ").replaceAll("2 dose of"," ").replaceAll("3 dose of"," ").replaceAll("4 dose of"," ");
+
+        bonuses[0] = stab.isEmpty() ? "0" : stab.get(0).toString().replace("|astab = ","").replace("|astab1 = ","").replace("|astab2 = ","").replace("+","");
+        bonuses[1] = slash.isEmpty() ? "0" : slash.get(0).toString().replace("|aslash = ","").replace("|aslash1 = ","").replace("|aslash2 = ","").replace("+","");
+        bonuses[2] = crush.isEmpty() ? "0" : crush.get(0).toString().replace("|acrush = ","").replace("|acrush1 = ","").replace("|acrush2 = ","").replace("+","");
+        bonuses[3] = magic.isEmpty() ? "0"  : magic.get(0).toString().replace("|amagic = ","").replace("|amagic1 = ","").replace("|amagic2 = ","").replace("+","");
+        bonuses[4] = range.isEmpty() ? "0" : range.get(0).toString().replace("|arange = ","").replace("|arange1 = ","").replace("|arange2 = ","").replace("+","");
+        bonuses[5] = dstab.isEmpty() ? "0"  : dstab.get(0).toString().replace("|dstab = ","").replace("|dstab1 = ","").replace("|dstab2 = ","").replace("+","");
+        bonuses[6] = dslash.isEmpty() ? "0"  : dslash.get(0).toString().replace("|dslash = ","").replace("|dslash1 = ","").replace("|dslash2 = ","").replace("+","");
+        bonuses[7] = dcrush.isEmpty() ? "0"  : dcrush.get(0).toString().replace("|dcrush = ","").replace("|dcrush1 = ","").replace("|dcrush2 = ","").replace("+","");
+        bonuses[8] = dmagic.isEmpty() ? "0"  :dmagic.get(0).toString().replace("|dmagic = ","").replace("|dmagic1 = ","").replace("|dmagic2 = ","").replace("+","");
+        bonuses[9] = drange.isEmpty() ? "0"  : drange.get(0).toString().replace("|drange = ","").replace("|drange1 = ","").replace("|drange2 = ","").replace("+","");
+        bonuses[10] = str.isEmpty() ? "0"  : str.get(0).toString().replace("|str = ","").replace("|str1 = ","").replace("|str2 = ","").replace("+","");
+        bonuses[13] = prayer.isEmpty() ? "0"  : prayer.get(0).toString().replace("|prayer = ","").replace("|prayer1 = ","").replace("|prayer2 = ","").replace("+","");
+
+        whichslot = slot.isEmpty() ? "3" : slot.get(0).toString().replace("|slot = ","");
+//System.out.println(tradeables.isEmpty()+"");
+
+        if(whichslot.contains("weapon") || whichslot.contains("2h"))
+            slotnumber = Integer.parseInt("3");
+        if(whichslot.contains("body"))
+            slotnumber = Integer.parseInt("4");
+        if(whichslot.contains("head"))
+            slotnumber = Integer.parseInt("0");
+        if(whichslot.contains("cape"))
+            slotnumber = Integer.parseInt("1");
+        if(whichslot.contains("shield"))
+            slotnumber = Integer.parseInt("5");
+        if(whichslot.contains("legs"))
+            slotnumber = Integer.parseInt("7");
+        if(whichslot.contains("hands"))
+            slotnumber = Integer.parseInt("9");
+        if(whichslot.contains("feet"))
+            slotnumber = Integer.parseInt("10");
+        if(whichslot.contains("ring"))
+            slotnumber = Integer.parseInt("12");
+        if(whichslot.contains("neck"))
+            slotnumber = Integer.parseInt("2");
+        if(whichslot.contains("ammo"))
+            slotnumber = Integer.parseInt("13");
+
+
+        //System.out.println(tradeable);
+        if(tradeable.contains("No"))
+            isittradeable = tradeable.replace("No","false");
+        if(tradeable.contains("Yes"))
+            isittradeable = 	tradeable.replace("Yes","true");
+
+        in.close();
+        System.out.println("Got item: ("+i+") "+item.name);
+        //Client.instance.pushMessage("Got item info for: @blu@"+item.name+"@bla@(id:"+i+") type ::reloaditems ", 0, "");
+
+
+        writer.write("  {\n\t\"id\": " + i + ",\n\t\"name\": \"" + item.name
+            + "\",\n\t\"desc\": \"" + output + "\",\n\t\"value\": "
+            + item.cost + ",\n\t\"dropValue\": " + item.cost + ",\n\t\"bonus\": [\n\t  "
+            + bonuses[0] + ",\n\t  " + bonuses[1] + ",\n\t  " + bonuses[2]
+            + ",\n\t  " + bonuses[3] + ",\n\t  " + bonuses[4] + ",\n\t  "
+            + bonuses[5] + ",\n\t  " + bonuses[6] + ",\n\t  " + bonuses[7]
+            + ",\n\t  " + bonuses[8] + ",\n\t  " + bonuses[9] + ",\n\t  "
+            + bonuses[10] + ",\n\t  " + bonuses[13] + "\n\t],\n\t\"slot\": " +slotnumber
+            + ",\n\t\"fullmask\": " + fullmask + ",\n\t\"stackable\": " + stackable
+            + ",\n\t\"noteable\": " + noteable + ",\n\t\"tradable\": " + isittradeable
+            + ",\n\t\"wearable\": " + wearable + ",\n\t\"showBeard\": " + showBeard
+            + ",\n\t\"members\": " + members + ",\n\t\"twoHanded\": " + twoHanded
+            + ",\n\t\"requirements\": [\n\t  0,\n\t  0,\n\t  0,\n\t  0,\n\t  0,\n\t  0,\n\t  0,\n\t  0,\n\t  0,\n\t  0,\n\t  0,\n\t  0,\n\t  0,\n\t  0,\n\t  0,\n\t  0,\n\t  0,\n\t  0,\n\t  0,\n\t  0,\n\t  0\n\t]\n  },\n");
+
+        writer.close();
+
+
+    }
 //
 //private void decode(Buffer buffer) {
 //    while (true) {
@@ -581,98 +832,8 @@ public void decode(Buffer buffer) {
         if (def.noted_item_id != -1)
             def.set_noted_values();
 
-        int[] items = { BABYDRAGON_BONES, DRAGON_BONES, WYVERN_BONES, DAGANNOTH_BONES, FLIPPERS, SLED_4084, FISHBOWL_HELMET, DIVING_APPARATUS, CHICKEN_WINGS_11020, CHICKEN_LEGS_11022, CHICKEN_FEET_11019, CHICKEN_HEAD_11021, FANCY_BOOTS, GAS_MASK, MIME_MASK_10629, FROG_MASK, LIT_BUG_LANTERN, SKELETON_BOOTS, SKELETON_GLOVES, SKELETON_MASK, SKELETON_LEGGINGS, SKELETON_SHIRT, LIT_BUG_LANTERN, FOX, CHICKEN, BONESACK, GRAIN_5607, RUBBER_CHICKEN, BUNNY_EARS };
-        if (def.name != null) {
-            if (!def.name.startsWith("@gre@")) {
-                for (int item_id : items) {
-                    if (id == item_id) {
-                        def.name = ("@gre@" + def.name);
-                        break;
-                    }
-                }
-            }
-            if (!def.name.startsWith("@gre@"))
-            {
-                if ((def.name.toLowerCase().contains("pet")) || (def.name.toLowerCase().contains("3rd")) || (def.name.toLowerCase().contains("toxic")) || (def.name.toLowerCase().contains("occult")) || (def.name.toLowerCase().contains("anguish")) || (def.name.toLowerCase().contains("torture")) || (def.name.toLowerCase().contains("avernic")) || (def.name.toLowerCase().contains("serpentine")) || (def.name.toLowerCase().contains("tanzanite")) || (def.name.toLowerCase().contains("magma")) || (def.name.toLowerCase().contains("ancestral")) || (def.name.toLowerCase().contains("armadyl")) || (def.name.toLowerCase().contains("void"))
-                    || (def.name.toLowerCase().contains("bandos")) || (def.name.toLowerCase().contains("pegasian")) || (def.name.toLowerCase().contains("primordial")) || (def.name.toLowerCase().contains("eternal")) || (def.name.toLowerCase().contains("partyhat")) || (def.name.toLowerCase().contains("staff of light")) || (def.name.toLowerCase().contains("infernal")) || (def.name.toLowerCase().contains("slayer helm")) || (def.name.toLowerCase().contains("dragon hunter")) || (def.name.toLowerCase().contains("spectral")) || (def.name.toLowerCase().contains("ballista"))
-                    || (def.name.toLowerCase().contains("justiciar")) || (def.name.toLowerCase().contains("dragon claws")) || (def.name.toLowerCase().contains("bulwark")) || (def.name.toLowerCase().contains("dragon warhammer")) || (def.name.toLowerCase().contains("blessed sword")) || (def.name.toLowerCase().contains("godsword")) || (def.name.toLowerCase().contains("ward")) || (def.name.toLowerCase().contains("wyvern shield")) || (def.name.toLowerCase().contains("morrigan")) || (def.name.toLowerCase().contains("vesta")) || (def.name.toLowerCase().contains("zuriel"))
-                    || (def.name.toLowerCase().contains("statius")) || (def.name.toLowerCase().contains("dragon crossbow")) || (def.name.toLowerCase().contains("abyssal dagger")) || (def.name.toLowerCase().contains("ghrazi")) || (def.name.toLowerCase().contains("elder maul")) || (def.name.toLowerCase().contains("tormented")) || (def.name.toLowerCase().contains("infinity")) || (def.name.toLowerCase().contains("dragonfire")) || (def.name.toLowerCase().contains("blessed spirit shield")) || (def.name.toLowerCase().contains("of the dead")) || (def.name.toLowerCase().contains("ice arrow"))
-                    || (def.name.toLowerCase().contains("dragon javelin")) || (def.name.toLowerCase().contains("dragon knife")) || (def.name.toLowerCase().contains("dragon thrownaxe")) || (def.name.toLowerCase().contains("abyssal tentacle")) || (def.name.toLowerCase().contains("dark bow")) || (def.name.toLowerCase().contains("fremennik kilt")) || (def.name.toLowerCase().contains("spiked manacles")) || (def.name.toLowerCase().contains("fury")) || (def.name.toLowerCase().contains("dragon boots")) || (def.name.toLowerCase().contains("ranger boots")) || (def.name.toLowerCase().contains("mage's book"))
-                    || (def.name.toLowerCase().contains("master wand")) || (def.name.toLowerCase().contains("granite maul")) || (def.name.toLowerCase().contains("tome of fire")) || (def.name.toLowerCase().contains("recoil")) || (def.name.toLowerCase().contains("dharok")) || (def.name.toLowerCase().contains("karil")) || (def.name.toLowerCase().contains("guthan")) || (def.name.toLowerCase().contains("torag")) || (def.name.toLowerCase().contains("verac")) || (def.name.toLowerCase().contains("ahrim")) || (def.name.toLowerCase().contains("fire cape")) || (def.name.toLowerCase().contains("max cape"))
-                    || (def.name.toLowerCase().contains("blighted")) || (def.name.toLowerCase().contains("dragon defender")) || (def.name.toLowerCase().contains("healer hat")) || (def.name.toLowerCase().contains("fighter hat")) || (def.name.toLowerCase().contains("runner hat")) || (def.name.toLowerCase().contains("ranger hat")) || (def.name.toLowerCase().contains("fighter torso")) || (def.name.toLowerCase().contains("runner boots")) || (def.name.toLowerCase().contains("penance skirt")) || (def.name.toLowerCase().contains("looting bag")) || (def.name.toLowerCase().contains("rune pouch"))
-                    || (def.name.toLowerCase().contains("stamina")) || (def.name.toLowerCase().contains("anti-venom")) || (def.name.toLowerCase().contains("zamorakian")) || (def.name.toLowerCase().contains("blood money")) || (def.name.toLowerCase().contains("hydra")) || (def.name.toLowerCase().contains("ferocious")) || (def.name.toLowerCase().contains("jar of")) || (def.name.toLowerCase().contains("brimstone")) || (def.name.toLowerCase().contains("crystal")) || (def.name.toLowerCase().contains("dagon")) || (def.name.toLowerCase().contains("dragon pickaxe")) || (def.name.toLowerCase().contains("tyrannical"))
-                    || (def.name.toLowerCase().contains("dragon 2h")) || (def.name.toLowerCase().contains("elysian")) || (def.name.toLowerCase().contains("holy elixer")) || (def.name.toLowerCase().contains("odium")) || (def.name.toLowerCase().contains("malediction")) || (def.name.toLowerCase().contains("fedora")) || (def.name.toLowerCase().contains("suffering")) || (def.name.toLowerCase().contains("mole")) || (def.name.toLowerCase().contains("vampyre dust")) || (def.name.toLowerCase().contains("bludgeon")) || (def.name.toLowerCase().contains("kbd heads")) || (def.name.toLowerCase().contains("trident"))
-                    || (def.name.toLowerCase().contains("nightmare")) || (def.name.toLowerCase().contains("kodai wand")) || (def.name.toLowerCase().contains("dragon sword")) || (def.name.toLowerCase().contains("dragon harpoon")) || (def.name.toLowerCase().contains("mystery box")) || (def.name.toLowerCase().contains("crystal key")) || (def.name.toLowerCase().contains("volatile")) || (def.name.toLowerCase().contains("eldritch")) || (def.name.toLowerCase().contains("harmonised")) || (def.name.toLowerCase().contains("inquisitor")) || (def.name.toLowerCase().contains("treasonous")) || (def.name.toLowerCase().contains("ring of the gods"))
-                    || (def.name.toLowerCase().contains("vorkath")) || (def.name.toLowerCase().contains("dragonbone")) || (def.name.toLowerCase().contains("uncut onyx")) || (def.name.toLowerCase().contains("zulrah")) || (def.name.toLowerCase().contains("zul-andra")) || (def.name.toLowerCase().contains("sanguinesti")) || (def.name.toLowerCase().contains("blade of saeldor")) || (def.name.toLowerCase().contains("barrelchest anchor")) || (def.name.toLowerCase().contains("staff of balance")) || (def.name.toLowerCase().contains("twisted bow")) || (def.name.toLowerCase().contains("facegaurd")) || (def.name.toLowerCase().contains("guardian"))
-                    || (def.name.toLowerCase().contains("twisted buckler")) || (def.name.toLowerCase().contains("dragon dart")) || (def.name.toLowerCase().contains("guthix rest")) || (def.name.toLowerCase().contains("obsidian")) || (def.name.toLowerCase().contains("regen bracelet")) || (def.name.toLowerCase().contains("rangers'")) || (def.name.toLowerCase().contains("dragon scimitar (or)")) || (def.name.toLowerCase().contains("ferox coins")) || (def.name.toLowerCase().contains("divine")) || (def.name.toLowerCase().contains("super antifire")) || (def.name.toLowerCase().contains("robin hood hat")) || (def.name.toLowerCase().contains("ankou"))
-                    || (def.name.toLowerCase().contains("santa")) || (def.name.toLowerCase().contains("halloween"))) {
-                    def.name = ("@gre@" + def.name);
-                }
-                if ((def.name.toLowerCase().contains("berserker ring")) || (def.name.toLowerCase().contains("seers")) || (def.name.toLowerCase().contains("archers")) || (def.name.toLowerCase().contains("warrior ring"))) {
-                    def.name = ("@gre@" + def.name);
-                }
-                if (def.name.toLowerCase().contains("scythe")) {
-                    def.name = ("@gre@" + def.name);
-                }
-                if (def.name.toLowerCase().contains("gilded")) {
-                    def.name = ("@gre@" + def.name);
-                }
-                if (def.name.toLowerCase().contains("bunny")) {
-                    def.name = ("@gre@" + def.name);
-                }
-                if (def.name.toLowerCase().contains("zanik")) {
-                    def.name = ("@gre@" + def.name);
-                }
-                if (def.name.toLowerCase().contains("ele'")) {
-                    def.name = ("@gre@" + def.name);
-                }
-                if (def.name.toLowerCase().contains("prince")) {
-                    def.name = ("@gre@" + def.name);
-                }
-                if (def.name.toLowerCase().contains("zombie")) {
-                    def.name = ("@gre@" + def.name);
-                }
-                if (def.name.toLowerCase().contains("mithril seeds")) {
-                    def.name = ("@gre@" + def.name);
-                }
-                if (def.name.toLowerCase().contains("tribal")) {
-                    def.name = ("@gre@" + def.name);
-                }
-                if (def.name.toLowerCase().contains("broodoo")) {
-                    def.name = ("@gre@" + def.name);
-                }
-                if ((def.name.toLowerCase().contains("scarf")) || (def.name.toLowerCase().contains("woolly")) || (def.name.toLowerCase().contains("bobble"))) {
-                    def.name = ("@gre@" + def.name);
-                }
-                if (def.name.toLowerCase().contains("cane")) {
-                    def.name = ("@gre@" + def.name);
-                }
-                if (def.name.toLowerCase().contains("jester")) {
-                    def.name = ("@gre@" + def.name);
-                }
-                if (def.name.toLowerCase().contains("(g)")) {
-                    def.name = ("@gre@" + def.name);
-                }
-                if ((def.name.toLowerCase().contains("(t)")) && (!def.name.toLowerCase().endsWith("cape(t)"))) {
-                    def.name = ("@gre@" + def.name);
-                }
-                if ((def.name.toLowerCase().contains("camo")) || (def.name.toLowerCase().contains("boxing glove"))) {
-                    def.name = ("@gre@" + def.name);
-                }
-                if (def.name.toLowerCase().contains("dharok")) {
-                    def.name = ("@gre@" + def.name);
-                }
-                if (def.name.toLowerCase().contains("dragon spear")) {
-                    def.name = ("@gre@" + def.name);
-                }
-                if (def.name.toLowerCase().contains("phoenix neck")) {
-                    def.name = ("@gre@" + def.name);
-                }
-                if (def.name.toLowerCase().contains("dragon bolts (e)")) {
-                    def.name = ("@gre@" + def.name);
-                }
-            }
-        }
+
+
         return def;
     }
 

@@ -4897,6 +4897,7 @@ public class Client extends GameApplet {
             if (class9.children[j] == -1)
                 break;
             Widget class9_1 = Widget.cache[class9.children[j]];
+
             if (class9_1.type == 1)
                 resetAnimation(class9_1.id);
             class9_1.currentFrame = 0;
@@ -5853,7 +5854,7 @@ public class Client extends GameApplet {
                 break;
         }
         if (action == 866) {
-            handleGoToMagicTab();
+            setTab(6);
         }
         if (action == 869) {
             handleSpellFilters();
@@ -13199,13 +13200,7 @@ public class Client extends GameApplet {
 
 
     }
-    private static void handleGoToMagicTab() {
 
-        sidebarId = 6;
-        update_tab_producer = true;
-      //  needDrawTabArea = true;
-        //tabAreaAltered = true;
-    }
     public void handleSpellFilters(){
         handleSpellBookClear();
         Widget rsi = Widget.cache[12855];

@@ -69,7 +69,7 @@ public final class ClientConstants {
     /**
      * Allow walking over the wilderness ditch
      */
-    public static final boolean WILDERNESS_DITCH_DISABLED = true;
+    public static final boolean WILDERNESS_DITCH_DISABLED = false;
 
     /**
      * If we want to hide the client version from players, set this to false.
@@ -95,7 +95,7 @@ public final class ClientConstants {
 
     public static final String SERVER_ADDRESS = production ? "127.0.0.1" : "127.0.0.1";//144.217.81.24
 
-    public static int SERVER_PORT = (PVP_MODE ? 43594 : 43596);
+    public static int SERVER_PORT = (PVP_MODE ? 43594 : 43594);
     public static final int FILE_SERVER_PORT = 43598;
 
     //Set dynamic map crosshair to true for a world map crosshair that moves or false for a static one that doesn't move.
@@ -125,7 +125,7 @@ public final class ClientConstants {
     /**
      * A string which indicates the Client's name.
      */
-    public static final String CLIENT_NAME = "Ferox";
+    public static final String CLIENT_NAME = "Runescape";
 
     /**
      * Dumps map region images when new regions are loaded.

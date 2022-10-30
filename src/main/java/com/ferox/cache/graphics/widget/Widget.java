@@ -386,7 +386,7 @@ public class Widget {
             }
         }
         interfaceLoader = interfaces;
-        WildernessWidget.unpack(font);
+
         SpawnTab.unpack(font);
         DepositBox.unpack(font);
 
@@ -444,6 +444,7 @@ public class Widget {
         TradingPostWidget.unpack(font);
         GoodieBagWidget.unpack(font);
         EventWidget.unpack(font);
+        WildernessWidget.unpack(font);
         if (ClientConstants.CHECK_UNUSED_INTERFACES) {
             checkUnusedInterfaces();
         }
